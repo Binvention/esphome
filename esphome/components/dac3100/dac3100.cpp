@@ -35,7 +35,7 @@ void DAC3100::setup() {
   //ERROR_CHECK(this->write_byte(DAC3100_DAC_SIG_PROC, 0x01), "Set DAC_SIG_PROC failed"); //defaults to PRB_P1
   
   //setup dac datapath for left data through both dacs
-  ERROR_CHECK(this->write_byte(DAC3100_DAC_DATA_SET,0x44), "Set DAC_DATA_SET failed");
+  ERROR_CHECK(this->write_byte(DAC3100_DAC_DATA_SET,0x18), "Set DAC_DATA_SET failed");
 
   
   // *** Select Page 1 ***
@@ -56,6 +56,7 @@ void DAC3100::setup() {
   ERROR_CHECK(this->write_byte(DAC3100_HP_DRIVER, 0xc4), "Set HP_DRIVER failed");
   ERROR_CHECK(this->write_byte(DAC3100_SPK_AMP, 0x86), "Set SPK_AMP failed");
   // *** Select Page 0 *** 
+  ERROR_CHECK(this->write_byte(DAC3100_PAGE_CTRL, 0x00), "Set page 1 failed");
   //power up the dac   
   ERROR_CHECK(this->write_byte(DAC3100_DAC_DATA_SET,0xd4), "Set DAC_DATA_SET failed");
   // Set left and right DAC digital volume control
