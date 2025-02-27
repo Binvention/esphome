@@ -51,7 +51,7 @@ void DAC3100::setup() {
   // 
   ERROR_CHECK(this->write_byte(DAC3100_HP_POP_REM, 0X4E), "Set DAC3100_HP_POP_REM failed");
   ERROR_CHECK(this->write_byte(DAC3100_PGA_RAMP_DOWN, 0X70), "Set DAC3100_HP_POP_REM failed");
-  ERROR_CHECK(this->write_byte(DAC3100_DAC_OUT_MIX,0x44),"Set output mixing failed")
+  ERROR_CHECK(this->write_byte(DAC3100_DAC_OUT_MIX,0x88),"Set output mixing failed")
   ERROR_CHECK(this->write_byte(DAC3100_MIC_BIAS,0x0B),"Set mic bias failed")
   ERROR_CHECK(this->write_byte(DAC3100_HP_DRIVER_CTRL,0xE0),"Set output mixing failed")
   // ERROR_CHECK(this->write_byte(DAC3100_L_TO_SPK_AN_VOL, 0x40), "Set driver volumefailed");
