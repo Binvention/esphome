@@ -54,9 +54,9 @@ void DAC3100::setup() {
   ERROR_CHECK(this->write_byte(DAC3100_DAC_OUT_MIX,0x88),"Set output mixing failed")
   ERROR_CHECK(this->write_byte(DAC3100_MIC_BIAS,0x0B),"Set mic bias failed")
   ERROR_CHECK(this->write_byte(DAC3100_HP_DRIVER_CTRL,0xE0),"Set output mixing failed")
-  // ERROR_CHECK(this->write_byte(DAC3100_L_TO_SPK_AN_VOL, 0x40), "Set driver volumefailed");
-  // ERROR_CHECK(this->write_byte(DAC3100_HPL_AN_VOL, 0x92), "Set driver volume failed");
-  // ERROR_CHECK(this->write_byte(DAC3100_HPR_AN_VOL, 0x92), "Set driver volume failed");
+  ERROR_CHECK(this->write_byte(DAC3100_L_TO_SPK_AN_VOL, 0x00), "Set driver volumefailed");
+  ERROR_CHECK(this->write_byte(DAC3100_HPL_AN_VOL, 0x92), "Set driver volume failed");
+  ERROR_CHECK(this->write_byte(DAC3100_HPR_AN_VOL, 0x92), "Set driver volume failed");
   ERROR_CHECK(this->write_byte(DAC3100_HPL_DRIVER, 0x06), "Set HPL_DRIVER failed");
   ERROR_CHECK(this->write_byte(DAC3100_HPR_DRIVER, 0x06), "Set HPR_DRIVER failed");
   ERROR_CHECK(this->write_byte(DAC3100_SPK_DRIVER, 0x04), "Set SPK_DRIVER failed");
@@ -81,7 +81,7 @@ void DAC3100::setup() {
 
 
   //power up the dac   
-  ERROR_CHECK(this->write_byte(DAC3100_DAC_DATA_SET,0xd9), "Set DAC_DATA_SET failed");
+  ERROR_CHECK(this->write_byte(DAC3100_DAC_DATA_SET,0xd8), "Set DAC_DATA_SET failed");
   // Set left and right DAC digital volume control
   ERROR_CHECK(this->write_volume_(), "Set volume failed");
   // Unmute left and right channels
