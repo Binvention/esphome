@@ -43,8 +43,6 @@ void DAC3100::setup() {
   // Program the DAC processing block to be used - PRB_P1
   ERROR_CHECK(this->write_byte(DAC3100_DAC_SIG_PROC, 0x19), "Set DAC_SIG_PROC failed"); //defaults to PRB_P1
   
-  //setup dac datapath for left data through both dacs
-  ERROR_CHECK(this->write_byte(DAC3100_DAC_DATA_SET,0x18), "Set DAC_DATA_SET failed");
 
   
   // *** Select Page 1 ***
@@ -52,7 +50,7 @@ void DAC3100::setup() {
   
   //route dac left to all other outputs
   // route dac to drivers
-  ERROR_CHECK(this->write_byte(DAC3100_DAC_OUT_MIX, 0x88), "Set DAC_OUT_MIX failed");
+  ERROR_CHECK(this->write_byte(DAC3100_DAC_OUT_MIX, 0x44), "Set DAC_OUT_MIX failed");
 
   // 
   ERROR_CHECK(this->write_byte(DAC3100_HP_POP_REM, 0X4E), "Set DAC3100_HP_POP_REM failed");
@@ -63,9 +61,9 @@ void DAC3100::setup() {
   ERROR_CHECK(this->write_byte(DAC3100_L_TO_SPK_AN_VOL, 0x40), "Set driver volumefailed");
   ERROR_CHECK(this->write_byte(DAC3100_HPL_AN_VOL, 0x92), "Set driver volume failed");
   ERROR_CHECK(this->write_byte(DAC3100_HPR_AN_VOL, 0x92), "Set driver volume failed");
-  ERROR_CHECK(this->write_byte(DAC3100_HPL_DRIVER, 0x02), "Set HPL_DRIVER failed");
-  ERROR_CHECK(this->write_byte(DAC3100_HPR_DRIVER, 0x02), "Set HPR_DRIVER failed");
-  ERROR_CHECK(this->write_byte(DAC3100_SPK_DRIVER, 0x00), "Set SPK_DRIVER failed");
+  ERROR_CHECK(this->write_byte(DAC3100_HPL_DRIVER, 0x06), "Set HPL_DRIVER failed");
+  ERROR_CHECK(this->write_byte(DAC3100_HPR_DRIVER, 0x06), "Set HPR_DRIVER failed");
+  ERROR_CHECK(this->write_byte(DAC3100_SPK_DRIVER, 0x04), "Set SPK_DRIVER failed");
   ERROR_CHECK(this->write_byte(DAC3100_SPK_AMP, 0x86), "Set HPL_DRIVER failed");
   
 
