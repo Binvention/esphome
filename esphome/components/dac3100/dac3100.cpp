@@ -61,6 +61,7 @@ void DAC3100::setup() {
   ERROR_CHECK(this->write_byte(DAC3100_HPR_DRIVER, 0x06), "Set HPR_DRIVER failed");
   ERROR_CHECK(this->write_byte(DAC3100_SPK_DRIVER, 0x04), "Set SPK_DRIVER failed");
   ERROR_CHECK(this->write_byte(DAC3100_SPK_AMP, 0x86), "Set HPL_DRIVER failed");
+  ERROR_CHECK(this->write_byte(DAC3100_HP_DRIVER, 0xc4), "Set HP_DRIVER failed");
   
 
   // *** Select Page 3
@@ -70,7 +71,6 @@ void DAC3100::setup() {
 
   
   // // Power up the drivers
-  // ERROR_CHECK(this->write_byte(DAC3100_HP_DRIVER, 0xc4), "Set HP_DRIVER failed");
   // ERROR_CHECK(this->write_byte(DAC3100_SPK_AMP, 0x86), "Set SPK_AMP failed");
   // *** Select Page 0 *** 
   ERROR_CHECK(this->write_byte(DAC3100_PAGE_CTRL, 0x00), "Set page 1 failed");
