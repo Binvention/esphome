@@ -31,6 +31,8 @@ void DAC3100::setup() {
 void DAC3100::dump_config() {
   ESP_LOGCONFIG(TAG, "DAC3100:");
   LOG_I2C_DEVICE(this);
+  LOG_PIN("  Reset Pin: ", this->reset_pin_);
+  LOG_PIN("  IRQ Pin: ", this->irq_pin_);
 
   if (this->is_failed()) {
     ESP_LOGE(TAG, "Communication with DAC3100 failed");
