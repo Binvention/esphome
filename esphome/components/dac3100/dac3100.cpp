@@ -36,6 +36,11 @@ void DAC3100::loop() {
       this->start_attempt_ = 0;
     }
   }
+  else if (start_attempt_ = 10) {
+    ESP_LOGE(TAG, "DAC failed to start after 10 attempts");
+    this->mark_failed();
+    this->start_attempt_++;
+  }
 }
 
 void DAC3100::dump_config() {
