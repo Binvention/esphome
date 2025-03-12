@@ -29,14 +29,15 @@ void DAC3100::setup() {
 }
 
 void DAC3100::loop() {
-  if(this->start_attempt_ > 0 && start_attempt_ < 10){
+  //if less then the max attempts keep trying
+  if(this->start_attempt_ > 0 && start_attempt_ < max_attempts_){
     this->start_attempt_++;
     if(this->write_byte(DAC3100_PAGE_CTRL, 0x00)){
       this->config_dac_();
       this->start_attempt_ = 0;
     }
   }
-  else if (start_attempt_ = 10) {
+  else if (start_attempt_ = max_attempts_) {
     ESP_LOGE(TAG, "DAC failed to start after 10 attempts");
     this->mark_failed();
     this->start_attempt_++;

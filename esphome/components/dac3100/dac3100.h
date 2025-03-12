@@ -89,7 +89,7 @@ class DAC3100 : public audio_dac::AudioDac, public Component, public i2c::I2CDev
   void setup() override;
   void loop() override;
   void dump_config() override;
-  float get_setup_priority() const override { return setup_priority::DATA; }
+  float get_setup_priority() const override { return setup_priority::LATE; }
 
   bool set_mute_off() override;
   bool set_mute_on() override;
@@ -104,6 +104,7 @@ class DAC3100 : public audio_dac::AudioDac, public Component, public i2c::I2CDev
   void config_dac_();
  
   int start_attempt_;
+  const int max_attempts_ = 100;
   uint8_t auto_mute_mode_{0};
   float volume_{0};
 };
