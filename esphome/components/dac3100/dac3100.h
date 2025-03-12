@@ -87,6 +87,7 @@ static const uint8_t DAC3100_TIMER_MCLK_DIV = 0x10;     // Register 16  - Timer 
 class DAC3100 : public audio_dac::AudioDac, public Component, public i2c::I2CDevice {
  public:
   void setup() override;
+  void loop() override;
   void dump_config() override;
   float get_setup_priority() const override { return setup_priority::DATA; }
 
@@ -100,7 +101,9 @@ class DAC3100 : public audio_dac::AudioDac, public Component, public i2c::I2CDev
  protected:
   bool write_mute_();
   bool write_volume_();
-
+  void config_dac_();
+ 
+  int start_attempt_;
   uint8_t auto_mute_mode_{0};
   float volume_{0};
 };
