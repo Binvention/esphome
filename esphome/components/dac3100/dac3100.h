@@ -88,7 +88,7 @@ class DAC3100 : public audio_dac::AudioDac, public Component, public i2c::I2CDev
  public:
   void setup() override;
   void dump_config() override;
-  float get_setup_priority() const override { return setup_priority::LATE; }
+  float get_setup_priority() const override { return setup_priority::HARDWARE; }
   void set_irq_pin(GPIOPin * pin){irq_pin_ = pin;}
   void set_reset_pin(GPIOPin * pin){reset_pin_ = pin;}
 
