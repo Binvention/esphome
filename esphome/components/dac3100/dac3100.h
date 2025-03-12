@@ -87,9 +87,10 @@ static const uint8_t DAC3100_TIMER_MCLK_DIV = 0x10;     // Register 16  - Timer 
 class DAC3100 : public audio_dac::AudioDac, public Component, public i2c::I2CDevice {
  public:
   void setup() override;
-  void loop() override;
   void dump_config() override;
   float get_setup_priority() const override { return setup_priority::LATE; }
+  void set_irq_pin(GPIOPin * pin){irq_pin_ = pin;}
+  void set_reset_pin(GPIOPin * pin){reset_pin_ = pin;}
 
   bool set_mute_off() override;
   bool set_mute_on() override;
@@ -102,7 +103,11 @@ class DAC3100 : public audio_dac::AudioDac, public Component, public i2c::I2CDev
   bool write_mute_();
   bool write_volume_();
   void config_dac_();
- 
+  void reset_dac_();
+  
+  bool dac_ready_;
+  GPIOPin * irq_pin_;
+  GPIOPin * reset_pin_;
   int start_attempt_;
   const int max_attempts_ = 100;
   uint8_t auto_mute_mode_{0};
