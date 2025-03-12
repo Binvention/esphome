@@ -171,9 +171,9 @@ void DAC3100::config_dac_(){
 }
 
 void DAC3100::reset_dac_(){
-  this->reset_pin_->digital_write(0);
+  this->reset_pin_->digital_write(1);
   this->set_timeout(100,[this](){
-    this->reset_pin_->digital_write(1);
+    this->reset_pin_->digital_write(0);
     this->set_timeout(20,[this](){this->config_dac_();});
   });
 }
