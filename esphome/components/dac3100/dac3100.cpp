@@ -161,7 +161,12 @@ void DAC3100::config_dac_(){
     }
     else {
       //try again after some time 
-      this->set_timeout(50,[this](){this->config_dac_();});
+      if(this->start_attempt_ % 5 == 0){
+        this->set_timeout(50,[this](){this->reset_dac_();});
+      }
+      else {
+        this->set_timeout(50,[this](){this->config_dac_();});
+      }
     }
   }
   else {
