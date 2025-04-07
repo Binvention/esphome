@@ -132,11 +132,11 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
 
 
 bool TRF7962A::is_tag_active(){
-
+  return false;
 }
 
 ISO15693_RESULT TRF7962A::get_last_result(){
-
+  return ISO15693_RESULT::;
 }
 
 TRANSFER_STATUS TRF7962A::get_last_transfer_status(){

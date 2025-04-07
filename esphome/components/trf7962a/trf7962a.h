@@ -16,7 +16,7 @@ class TRF7962ATrigger: public Trigger<std::string> {
  };
 
 enum ISO15693_RESULT : uint8_t {
-  NO_RESPONSE = 0x00,
+  RESULT_NO_RESPONSE = 0x00,
   VALID_RESPONSE = 0x01,
   INVALID_RESPONSE = 0x02,
 
@@ -39,16 +39,12 @@ enum ISO15693_RESULT : uint8_t {
 
 enum TRANSFER_STATUS {
   IDLE = 0x00,
-  TX_COMPLETE = 0x01,
-  RX_COMPLETE = 0x02,
-  TX_ERROR = 0x03,
-  RX_WAIT = 0x04,
-  RX_WAIT_EXTENSION = 0x05,
-  TX_WAIT = 0x06,
-  PROTOCOL_ERROR = 0x07,
-  COLLISION_ERROR = 0x08,
-  NO_RESPONSE_RECEIVED = 0x09,
-  NO_RESPONSE_RECEIVED_15693 = 0x0A
+  TRANSMIT_COMPLETE = 0x01,
+  RECEIVE_COMPLETE = 0x02,
+  TRANSMIT_ERROR = 0x03,
+  RECEIVE_WAIT = 0x04,
+  RECEIVE_WAIT_EXTENSION = 0x05,
+  TRANSMIT_WAIT = 0x06
 };
 // registers (defaults to write must set type to make it read/continuous)
 enum TRF7962A_REG : uint8_t {
@@ -99,7 +95,6 @@ enum TRF7962A_TRANS_TYPE: uint8_t {
 };
 
 enum TRF7962A_IRQ_STAT : uint8_t {
-  IDLING = 0x00,
   NO_RESPONSE = 0x01,
   COLLISION_ERROR = 0x02,
   FRAMING_ERROR = 0x04,
@@ -161,7 +156,7 @@ class TRF7962A : public Component, public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRS
   
   
   std::vector<uint8_t> tag_uid_;
-  TAG_EVENT tag_status_;
+  // TAG_EVENT tag_status_;
   bool field_on_;
   uint16_t last_random_;
   TRANSFER_STATUS transfer_status_;
