@@ -42,7 +42,7 @@ void TRF7962A::loop() {
         ESP_LOGE(TAG, "Error FIFO overflow detected");
       }
       read_rx_bytes(length&0x0f);
-      transfer_status_ = TRANSFER_STATUS::RX_COMPLETE;
+      transfer_status_ = TRANSFER_STATUS::RECEIVE_COMPLETE;
     }
     else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
       uint8_t length = read_register(TRF7962A_REG::FIFO_STAT);

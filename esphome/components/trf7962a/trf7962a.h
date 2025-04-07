@@ -38,7 +38,7 @@ enum ISO15693_RESULT : uint8_t {
 };
 
 enum TRANSFER_STATUS {
-  IDLE = 0x00,
+  NO_TRANSACTIONS = 0x00,
   TRANSMIT_COMPLETE = 0x01,
   RECEIVE_COMPLETE = 0x02,
   TRANSMIT_ERROR = 0x03,
@@ -162,7 +162,7 @@ class TRF7962A : public Component, public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRS
   TRANSFER_STATUS transfer_status_;
   std::vector<uint8_t> rx_buff_;
   ISO15693_RESULT last_result_;
-  LOOP_STATUS loop_status_;
+  // LOOP_STATUS loop_status_;
 
 };
 
