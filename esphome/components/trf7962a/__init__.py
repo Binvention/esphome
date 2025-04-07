@@ -20,7 +20,7 @@ TRF7962ATrigger = trf7962a_ns.class_("TRF7962ATrigger", automation.Trigger.templ
 
 
 
-TRF7962A_SCHEMA = cv.Schema(
+CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(TRF7962A),
         cv.Optional(CONF_ON_TAG): automation.validate_automation(
