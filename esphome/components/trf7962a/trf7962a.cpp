@@ -146,10 +146,12 @@ TRANSFER_STATUS TRF7962A::get_last_transfer_status(){
 
 void TRF7962A::turn_field_off_(){
   this->write_register(TRF7962A_REG::CHIP_STAT,0X01);
+  field_on_ = true;
 }
 
 void TRF7962A::turn_field_on_(){
   this->write_register(TRF7962A_REG::CHIP_STAT,0X21);
+  field_on_ = false;
 }
 
 ISO15693_RESULT TRF7962A::ISO15693_send_single_slot_inventory_(uint8_t* uid){
