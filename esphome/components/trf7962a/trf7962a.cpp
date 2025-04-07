@@ -126,7 +126,7 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
     transfer_byte(TRF7962A_REG::FIFO_IO_REG | TRF7962A_TRANS_TYPE::READ);
     rx_buff_.push_back(transfer_byte(TRF7962A_TRANS_TYPE::IDLE));
   }
-  ESP_LOGV(TAG,std::string(rx_buff_.begin(),rx_buff_.end()).c_str());
+  ESP_LOGD(TAG,std::string(rx_buff_.begin(),rx_buff_.end()).c_str());
   disable();
 }
 
@@ -168,7 +168,7 @@ void TRF7962A::ISO15693_get_random_slixl_(){
   transfer_byte(0x04); //NXP manufacturer 
   disable();
   transfer_status_ = TRANSFER_STATUS::RECEIVE_WAIT;
-  ESP_LOGVV(TAG, "send get random number to SLIXL");
+  ESP_LOGD(TAG, "send get random number to SLIXL");
 }
 
 ISO15693_RESULT TRF7962A::ISO15693_set_pass_slixl_(uint8_t pass_id, uint32_t password){
