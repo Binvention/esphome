@@ -110,14 +110,14 @@ enum TRF7962A_IRQ_STAT : uint8_t {
   TX_COMPLETE = 0x80
 };
 
-enum LOOP_STATUS {
-  IDLE,
-  INITIALIZE,
-  CONNECT_TAG,
-  TRY_PASSWORD,
-  WAIT_IRQ,
-  RESET
-};
+// enum LOOP_STATUS {
+//   IDLE,
+//   INITIALIZE,
+//   CONNECT_TAG,
+//   TRY_PASSWORD,
+//   WAIT_IRQ,
+//   RESET
+// };
 
 
 
