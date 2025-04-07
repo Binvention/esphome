@@ -24,7 +24,7 @@ void TRF7962A::setup() {
   this->write_register(TRF7962A_REG::MOD_SYS_CLK_CTRL,0b00100001);
   this->write_register(TRF7962A_REG::TX_PULSE_LEN,0x80);
   this->write_register(TRF7962A_REG::CHIP_STAT,0b00100001);
-  this->transfer_status_ = TRANSFER_STATUS::IDLE;
+  this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
 }
 
 void TRF7962A::dump_config() {
@@ -136,7 +136,7 @@ bool TRF7962A::is_tag_active(){
 }
 
 ISO15693_RESULT TRF7962A::get_last_result(){
-  return ISO15693_RESULT::;
+  return ISO15693_RESULT::RESULT_NO_RESPONSE;
 }
 
 TRANSFER_STATUS TRF7962A::get_last_transfer_status(){
@@ -153,7 +153,7 @@ void TRF7962A::turn_field_on_(){
 }
 
 ISO15693_RESULT TRF7962A::ISO15693_send_single_slot_inventory_(uint8_t* uid){
-
+  return RESULT_NO_RESPONSE;
 }
 
 void TRF7962A::ISO15693_get_random_slixl_(){
@@ -167,16 +167,16 @@ void TRF7962A::ISO15693_get_random_slixl_(){
   transfer_byte(0xB2); //get random number
   transfer_byte(0x04); //NXP manufacturer 
   disable();
-  transfer_status_ = TRANSFER_STATUS::RX_WAIT;
+  transfer_status_ = TRANSFER_STATUS::RECEIVE_WAIT;
   ESP_LOGVV(TAG, "send get random number to SLIXL");
 }
 
 ISO15693_RESULT TRF7962A::ISO15693_set_pass_slixl_(uint8_t pass_id, uint32_t password){
-
+  return RESULT_NO_RESPONSE;
 }
 
 ISO15693_RESULT TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t* blockData){
-
+  return RESULT_NO_RESPONSE;
 }
 
 }  // namespace trf7962a
