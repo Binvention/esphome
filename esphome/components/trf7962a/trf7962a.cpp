@@ -56,6 +56,7 @@ void TRF7962A::loop() {
   }
   //check if feild is on
   if(this->field_on_){
+    ISO15693_get_random_slixl_();
     // ISO15693_RESULT result;
     // result = ISO15693_get_random_slixl_(last_random_);
 
