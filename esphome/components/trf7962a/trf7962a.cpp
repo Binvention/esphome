@@ -24,7 +24,7 @@ void TRF7962A::setup() {
   this->write_register(TRF7962A_REG::MOD_SYS_CLK_CTRL,0b00100001);
   this->write_register(TRF7962A_REG::TX_PULSE_LEN,0x80);
   this->write_register(TRF7962A_REG::CHIP_STAT,0b00100001);
-
+  this->transfer_status_ = TRANSFER_STATUS::IDLE;
 }
 
 void TRF7962A::dump_config() {
@@ -33,43 +33,78 @@ void TRF7962A::dump_config() {
 }
 
 void TRF7962A::loop() {
-
-  ISO15693_RESULT result;
-
-  switch (loop_status_)
-  {
-  case LOOP_STATUS::IDLE:
-    this->check_for_tag();
-    break;
-  
-  default:
-    break;
-  }
-
-  if (tag_status_ == TAG_EVENT::TAG_PLACED) {
-    for (uint8_t i=0; i<3; i++) {
-      result = ISO15693_get_random_slixl(NULL);
-      if(result == ISO15693_RESULT::GET_RANDOM_VALID) {
-        break;
+  //check interrupts
+  uint8_t irq = read_register(TRF7962A_REG::IRQ_STAT);
+  if(irq) {
+    if(irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
+      uint8_t length = read_register(TRF7962A_REG::FIFO_STAT);
+      if (length & 0x10) {
+        ESP_LOGE(TAG, "Error FIFO overflow detected");
+      }
+      read_rx_bytes(length&0x0f);
+      transfer_status_ = TRANSFER_STATUS::RX_COMPLETE;
+    }
+    else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
+      uint8_t length = read_register(TRF7962A_REG::FIFO_STAT);
+      if (length & 0x10) {
+        ESP_LOGE(TAG, "Error FIFO overflow detected");
+      }
+      if(length & 0x40) {
+        read_rx_bytes (length &0x0f);
       }
     }
-    if(result != ISO15693_RESULT::GET_RANDOM_VALID) {
-      tag_status_ = TAG_EVENT::TAG_REMOVED;
+  }
+  //check if feild is on
+  if(this->field_on_){
+    // ISO15693_RESULT result;
+    // result = ISO15693_get_random_slixl_(last_random_);
 
-      //TODO handle tag event
-      for (auto *trigger : this->triggers_ontagremoved_)
-        trigger->process(this->tag_uid_);
-    }
+    // switch (loop_status_)
+    // {
+    // case LOOP_STATUS::IDLE:
+    //   if(result == ISO15693_RESULT::GET_RANDOM_VALID) {
+        
+    //   }
+    //   break;
+    
+    // default:
+    //   break;
+    // }
+
+    // if (tag_status_ == TAG_EVENT::TAG_PLACED) {
+    //   for (uint8_t i=0; i<3; i++) {
+    //     if(result == ISO15693_RESULT::GET_RANDOM_VALID) {
+    //       break;
+    //     }
+    //   }
+    //   if(result != ISO15693_RESULT::GET_RANDOM_VALID) {
+    //     tag_status_ = TAG_EVENT::TAG_REMOVED;
+
+    //     //TODO handle tag event
+    //     for (auto *trigger : this->triggers_ontagremoved_)
+    //       trigger->process(this->tag_uid_);
+    //   }
+    // }
+    // else {
+
+    // }
   }
   else {
-
+    this->turn_field_on_();
   }
+}
+
+void TRF7962A::send_command(TRF7962A_CMD command) {
+  enable();
+  transfer_byte(command);
+  disable();
 }
 
 uint8_t TRF7962A::read_register(TRF7962A_REG reg){
   uint8_t data;
   enable();
-  transfer_byte((uint8_t)reg | (uint8_t)TRF7962A_TRANS_TYPE::READ);
+  transfer_byte(reg | TRF7962A_TRANS_TYPE::READ);
+  transfer_byte(TRF7962A_TRANS_TYPE::IDLE);
   data = read_byte();
   disable();
   ESP_LOGVV(TAG, "read_register_(%d) -> %d", reg, data);
@@ -78,28 +113,69 @@ uint8_t TRF7962A::read_register(TRF7962A_REG reg){
 
 void TRF7962A::write_register(TRF7962A_REG reg, uint8_t value){
   enable();
-  transfer_byte((uint8_t)reg);
+  transfer_byte(reg);
   transfer_byte(value);
   disable();
   ESP_LOGVV(TAG, "write_register_(%d,%d)",reg,value);
 }
 
-void TRF7962A::send_command(TRF7962A_CMD command){
+void TRF7962A::read_rx_bytes(uint8_t length) {
   enable();
-  transfer_byte((uint8_t) command);
+  for(uint8_t i = 0; i <= length; i++) {
+    transfer_byte(TRF7962A_REG::FIFO_IO_REG | TRF7962A_TRANS_TYPE::READ);
+    rx_buff_.push_back(transfer_byte(TRF7962A_TRANS_TYPE::IDLE));
+  }
+  ESP_LOGV(TAG,std::string(rx_buff_.begin(),rx_buff_.end()).c_str());
   disable();
 }
 
-void TRF7962A::send_raw(uint8_t* buffer, uint8_t length){
+
+bool TRF7962A::is_tag_active(){
 
 }
 
-void TRF7962A::turn_field_off(){
+ISO15693_RESULT TRF7962A::get_last_result(){
+
+}
+
+TRANSFER_STATUS TRF7962A::get_last_transfer_status(){
+  return transfer_status_;
+}
+
+
+void TRF7962A::turn_field_off_(){
   this->write_register(TRF7962A_REG::CHIP_STAT,0X01);
 }
 
-void TRF7962A::turn_field_on(){
+void TRF7962A::turn_field_on_(){
   this->write_register(TRF7962A_REG::CHIP_STAT,0X21);
+}
+
+ISO15693_RESULT TRF7962A::ISO15693_send_single_slot_inventory_(uint8_t* uid){
+
+}
+
+void TRF7962A::ISO15693_get_random_slixl_(){
+  enable();
+  transfer_byte(TRF7962A_CMD::RESET_FIFO); 
+  transfer_byte(TRF7962A_CMD::TRANSMIT_CRC); 
+  transfer_byte(TRF7962A_REG::TX_LEN_B1|TRF7962A_TRANS_TYPE::CONTINUOUS);
+  transfer_byte(0x00);
+  transfer_byte(0x30);
+  transfer_byte(0x02);//ISO15693_REQ_DATARATE_HIGH
+  transfer_byte(0xB2); //get random number
+  transfer_byte(0x04); //NXP manufacturer 
+  disable();
+  transfer_status_ = TRANSFER_STATUS::RX_WAIT;
+  ESP_LOGVV(TAG, "send get random number to SLIXL");
+}
+
+ISO15693_RESULT TRF7962A::ISO15693_set_pass_slixl_(uint8_t pass_id, uint32_t password){
+
+}
+
+ISO15693_RESULT TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t* blockData){
+
 }
 
 }  // namespace trf7962a

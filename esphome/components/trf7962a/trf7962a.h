@@ -15,12 +15,7 @@ class TRF7962ATrigger: public Trigger<std::string> {
    void process(std::vector<uint8_t> &data);
  };
 
-enum class TAG_EVENT {
-  TAG_NOP,
-  TAG_PLACED,
-  TAG_REMOVED
-};
-enum class ISO15693_RESULT : uint8_t {
+enum ISO15693_RESULT : uint8_t {
   NO_RESPONSE = 0x00,
   VALID_RESPONSE = 0x01,
   INVALID_RESPONSE = 0x02,
@@ -42,7 +37,7 @@ enum class ISO15693_RESULT : uint8_t {
   READ_SINGLE_BLOCK_INVALID_RESPONSE = 0x42,
 };
 
-enum class TRANSFER_STATUS {
+enum TRANSFER_STATUS {
   IDLE = 0x00,
   TX_COMPLETE = 0x01,
   RX_COMPLETE = 0x02,
@@ -56,7 +51,7 @@ enum class TRANSFER_STATUS {
   NO_RESPONSE_RECEIVED_15693 = 0x0A
 };
 // registers (defaults to write must set type to make it read/continuous)
-enum class TRF7962A_REG : uint8_t {
+enum TRF7962A_REG : uint8_t {
   //main control registers
   CHIP_STAT = 0x00, // Chip Status Control
   ISO_CONTROL = 0x01, // ISO protocol control
@@ -81,7 +76,7 @@ enum class TRF7962A_REG : uint8_t {
   FIFO_IO_REG = 0x1F // FIFO I/O rEGISTER
 };
 //commands given over spi (command bit already included)
-enum class TRF7962A_CMD : uint8_t {
+enum TRF7962A_CMD : uint8_t {
   IDLING = 0x80,
   SOFT_INIT = 0x83,
   RESET_FIFO = 0x8F,
@@ -97,12 +92,13 @@ enum class TRF7962A_CMD : uint8_t {
   RECEIVER_GAIN_ADJ = 0x9A
 };
 //type of register transaction (default (0x00) is write)
-enum class TRF7962A_TRANS_TYPE: uint8_t {
+enum TRF7962A_TRANS_TYPE: uint8_t {
+  IDLE = 0x00,
   READ = 0x40,
   CONTINUOUS = 0x20
 };
 
-enum class TRF7962A_IRQ_STAT : uint8_t {
+enum TRF7962A_IRQ_STAT : uint8_t {
   IDLING = 0x00,
   NO_RESPONSE = 0x01,
   COLLISION_ERROR = 0x02,
@@ -114,7 +110,7 @@ enum class TRF7962A_IRQ_STAT : uint8_t {
   TX_COMPLETE = 0x80
 };
 
-enum class LOOP_STATUS {
+enum LOOP_STATUS {
   IDLE,
   INITIALIZE,
   CONNECT_TAG,
@@ -122,6 +118,8 @@ enum class LOOP_STATUS {
   WAIT_IRQ,
   RESET
 };
+
+
 
 class TRF7962A : public Component, public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, 
                               spi::CLOCK_POLARITY_LOW, spi::CLOCK_PHASE_LEADING, spi::DATA_RATE_4MHZ>{
@@ -135,55 +133,39 @@ class TRF7962A : public Component, public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRS
 
   void register_ontag_trigger(TRF7962ATrigger *trig) { this->triggers_ontag_.push_back(trig); }
   void register_ontagremoved_trigger(TRF7962ATrigger *trig) { this->triggers_ontagremoved_.push_back(trig); }
-
+  
+  void send_command(TRF7962A_CMD command);
   uint8_t read_register(TRF7962A_REG reg);
   void write_register(TRF7962A_REG reg, uint8_t value);
-  void send_command(TRF7962A_CMD cmd);
-  void send_raw(uint8_t* buffer, uint8_t length);
-  void send_raw_spi(uint8_t* buffer, uint8_t length, bool continuedSend);
-  void read_register_cont(uint8_t* buffer, uint8_t length);
-  void read_register_cont(uint8_t reg, uint8_t* buffer, uint8_t length);
-  void read_register_cont(TRF7962A_REG reg, uint8_t* buffer, uint8_t length);
+  void read_rx_bytes(uint8_t length);
 
   bool is_tag_active();
   ISO15693_RESULT get_last_result();
   TRANSFER_STATUS get_last_transfer_status();
 
-  uint8_t read_irq_register();
-  void clear_irq_register();
  protected:
-  void turn_field_on();
-  void turn_field_off();
-  TRANSFER_STATUS wait_rx_data(uint8_t tx_timeout, uint8_t rx_timeout);
-  void wait_tx_irq(uint8_t tx_timeout);
-  void wait_rx_irq(uint8_t rx_timeout);
-  void timeout_irq();
-  void check_for_tag();
+  void turn_field_on_();
+  void turn_field_off_();
 
-  ISO15693_RESULT ISO15693_send_single_slot_inventory(uint8_t* uid);
-  ISO15693_RESULT ISO15693_get_random_slixl(uint8_t* random);
-  ISO15693_RESULT ISO15693_set_pass_slixl(uint8_t pass_id, uint32_t password);
-  ISO15693_RESULT ISO15693_read_single_block(uint8_t blockId, uint8_t* blockData);
-
-  TRANSFER_STATUS send_data_tag(uint8_t *send_buffer, uint8_t send_len);
-  TRANSFER_STATUS send_data_tag(uint8_t *send_buffer, uint8_t send_len, uint8_t tx_timeout, uint8_t rx_timeout);
+  ISO15693_RESULT ISO15693_send_single_slot_inventory_(uint8_t* uid);
+  void ISO15693_get_random_slixl_();
+  ISO15693_RESULT ISO15693_set_pass_slixl_(uint8_t pass_id, uint32_t password);
+  ISO15693_RESULT ISO15693_read_single_block_(uint8_t blockId, uint8_t* blockData);
 
 
-
-  uint32_t knownPasswords[3] = { 0x7FFD6E5B, 0x0F0F0F0F, 0x00000000 };
+  uint32_t known_passwords_[3] = { 0x7FFD6E5B, 0x0F0F0F0F, 0x00000000 };
   GPIOPin *irq_pin_{nullptr};
 
   std::vector<TRF7962ATrigger *> triggers_ontag_;
   std::vector<TRF7962ATrigger *> triggers_ontagremoved_;
-
-  TRANSFER_STATUS transfer_status;
-  uint8_t transfer_buffer[50]; //may reduce size
-  uint8_t transfer_offset;
-  uint8_t transfer_rx_length;
   
   
   std::vector<uint8_t> tag_uid_;
   TAG_EVENT tag_status_;
+  bool field_on_;
+  uint16_t last_random_;
+  TRANSFER_STATUS transfer_status_;
+  std::vector<uint8_t> rx_buff_;
   ISO15693_RESULT last_result_;
   LOOP_STATUS loop_status_;
 
