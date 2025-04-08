@@ -16,27 +16,23 @@ void TRF7962A::setup() {
   this->spi_setup();
   this->set_mode(write_mode_);//default to writing mode
   this->irq_pin_->setup();
-  // set_timeout(50,[this](){
-  // });
-  this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
-  set_interval("get_random",1000,[this](){
-    this->send_command(TRF7962A_CMD::SOFT_INIT);
-    this->send_command(TRF7962A_CMD::IDLING);
+  this->send_command(TRF7962A_CMD::SOFT_INIT);
+  this->send_command(TRF7962A_CMD::IDLING);
+  set_timeout(50,[this](){
     this->send_command(TRF7962A_CMD::RESET_FIFO);
     this->write_register(TRF7962A_REG::ISO_CONTROL,0b10000010);
     this->write_register(TRF7962A_REG::COL_POS_IRQ_MASK,0b00111110);
     this->write_register(TRF7962A_REG::MOD_SYS_CLK_CTRL,0b00100001);
     this->write_register(TRF7962A_REG::TX_PULSE_LEN,0x80);
     this->write_register(TRF7962A_REG::CHIP_STAT,0b00100001);
+  });
+  this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
+  set_interval("get_random",1000,[this](){
     ISO15693_get_random_slixl_();
     ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
     ESP_LOGD(TAG,"FIFO STAT %02x",this->read_register(FIFO_STAT));
     write_register(CHIP_STAT,0x21);
     ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
-    ESP_LOGD(TAG,"iso control %02x",this->read_register(ISO_CONTROL));
-    ESP_LOGD(TAG,"irq mask %02x",this->read_register(COL_POS_IRQ_MASK));
-    ESP_LOGD(TAG,"clk ctrl %02x",this->read_register(MOD_SYS_CLK_CTRL));
-    ESP_LOGD(TAG,"tx pulse len %02x",this->read_register(TX_PULSE_LEN));
   });
 }
 
@@ -47,30 +43,33 @@ void TRF7962A::dump_config() {
 
 void TRF7962A::loop() {
   //check interrupts
-  enable();
-  write_byte(IRQ_STAT|READ);
-  set_mode(read_mode_); //switch to reading mode
-  uint8_t irq = read_byte();
-  read_byte(); //dummy read needed to clear irq
-  set_mode(write_mode_);//set back to write mode
-  disable();
-  if(irq) {
-    ESP_LOGD(TAG,"IRQ received"+irq);
-    if(irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
-      uint8_t length = read_register(TRF7962A_REG::FIFO_STAT);
-      if (length & 0x10) {
-        ESP_LOGE(TAG, "Error FIFO overflow detected");
+  if(irq_pin_->digital_read()){
+    ESP_LOGD(TAG,"IRQ Pin high");
+    enable();
+    write_byte(IRQ_STAT|READ);
+    set_mode(read_mode_); //switch to reading mode
+    uint8_t irq = read_byte();
+    read_byte(); //dummy read needed to clear irq
+    set_mode(write_mode_);//set back to write mode
+    disable();
+    if(irq) {
+      ESP_LOGD(TAG,"IRQ received"+irq);
+      if(irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
+        uint8_t length = read_register(TRF7962A_REG::FIFO_STAT);
+        if (length & 0x10) {
+          ESP_LOGE(TAG, "Error FIFO overflow detected");
+        }
+        read_rx_bytes(length&0x0f);
+        transfer_status_ = TRANSFER_STATUS::RECEIVE_COMPLETE;
       }
-      read_rx_bytes(length&0x0f);
-      transfer_status_ = TRANSFER_STATUS::RECEIVE_COMPLETE;
-    }
-    else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
-      uint8_t length = read_register(TRF7962A_REG::FIFO_STAT);
-      if (length & 0x10) {
-        ESP_LOGE(TAG, "Error FIFO overflow detected");
-      }
-      if(length & 0x40) {
-        read_rx_bytes (length &0x0f);
+      else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
+        uint8_t length = read_register(TRF7962A_REG::FIFO_STAT);
+        if (length & 0x10) {
+          ESP_LOGE(TAG, "Error FIFO overflow detected");
+        }
+        if(length & 0x40) {
+          read_rx_bytes (length &0x0f);
+        }
       }
     }
   }
