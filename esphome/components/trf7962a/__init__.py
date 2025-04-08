@@ -36,7 +36,7 @@ CONFIG_SCHEMA = cv.Schema(
         ),
         cv.Required(CONF_IRQ_PIN): pins.gpio_input_pin_schema
     }
-).extend(cv.COMPONENT_SCHEMA).extend(spi.spi_device_schema(cs_pin_required=False))
+).extend(cv.COMPONENT_SCHEMA).extend(spi.spi_device_schema(cs_pin_required=False,default_mode=0))
 
 
 
