@@ -55,9 +55,7 @@ void TRF7962A::loop() {
   }
   //check if feild is on
   if(this->field_on_){
-    if(transfer_status_ == NO_TRANSACTIONS || transfer_status_ == RECEIVE_COMPLETE){
       ISO15693_get_random_slixl_();
-    }
     // ISO15693_RESULT result;
     // result = ISO15693_get_random_slixl_(last_random_);
 
