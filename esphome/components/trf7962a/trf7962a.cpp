@@ -33,6 +33,10 @@ void TRF7962A::setup() {
     ESP_LOGD(TAG,"FIFO STAT %02x",this->read_register(FIFO_STAT));
     write_register(CHIP_STAT,0x21);
     ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
+    ESP_LOGD(TAG,"iso control %02x",this->read_register(ISO_CONTROL));
+    ESP_LOGD(TAG,"irq mask %02x",this->read_register(COL_POS_IRQ_MASK));
+    ESP_LOGD(TAG,"clk ctrl %02x",this->read_register(MOD_SYS_CLK_CTRL));
+    ESP_LOGD(TAG,"tx pulse len %02x",this->read_register(TX_PULSE_LEN));
   });
 }
 
