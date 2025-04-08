@@ -26,11 +26,8 @@ void TRF7962A::setup() {
   this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
   set_interval("get_random",1000,[this](){
     ISO15693_get_random_slixl_();
-    char * test;
-    sprintf(test,"Chip stat %02x",this->read_register(CHIP_STAT));
-    ESP_LOGD(TAG,test);
-    sprintf(test,"FIFO STAT %02x",this->read_register(FIFO_STAT));
-    ESP_LOGD(TAG,test);
+    ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
+    ESP_LOGD(TAG,"FIFO STAT %02x",this->read_register(FIFO_STAT));
   });
 }
 
@@ -132,8 +129,8 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
   for(uint8_t i = 0; i <= length; i++) {
     transfer_byte(TRF7962A_REG::FIFO_IO_REG | TRF7962A_TRANS_TYPE::READ);
     rx_buff_.push_back(transfer_byte(TRF7962A_TRANS_TYPE::IDLE));
+    ESP_LOGD(TAG,"byte received %02x",rx_buff_.back());
   }
-  ESP_LOGD(TAG,std::string(rx_buff_.begin(),rx_buff_.end()).c_str());
   disable();
 }
 
