@@ -16,18 +16,18 @@ void TRF7962A::setup() {
   this->spi_setup();
   this->set_mode(write_mode_);//default to writing mode
   this->irq_pin_->setup();
-  this->send_command(TRF7962A_CMD::SOFT_INIT);
-  this->send_command(TRF7962A_CMD::IDLING);
-  set_timeout(50,[this](){
+  // set_timeout(50,[this](){
+  // });
+  this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
+  set_interval("get_random",1000,[this](){
+    this->send_command(TRF7962A_CMD::SOFT_INIT);
+    this->send_command(TRF7962A_CMD::IDLING);
     this->send_command(TRF7962A_CMD::RESET_FIFO);
     this->write_register(TRF7962A_REG::ISO_CONTROL,0b10000010);
     this->write_register(TRF7962A_REG::COL_POS_IRQ_MASK,0b00111110);
     this->write_register(TRF7962A_REG::MOD_SYS_CLK_CTRL,0b00100001);
     this->write_register(TRF7962A_REG::TX_PULSE_LEN,0x80);
     this->write_register(TRF7962A_REG::CHIP_STAT,0b00100001);
-  });
-  this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
-  set_interval("get_random",1000,[this](){
     ISO15693_get_random_slixl_();
     ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
     ESP_LOGD(TAG,"FIFO STAT %02x",this->read_register(FIFO_STAT));
