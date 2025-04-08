@@ -24,7 +24,14 @@ void TRF7962A::setup() {
   this->write_register(TRF7962A_REG::TX_PULSE_LEN,0x80);
   this->write_register(TRF7962A_REG::CHIP_STAT,0b00100001);
   this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
-  set_interval("get_random",1000,[this](){ISO15693_get_random_slixl_();});
+  set_interval("get_random",1000,[this](){
+    ISO15693_get_random_slixl_();
+    char * test;
+    sprintf(test,"Chip stat %02x",this->read_register(CHIP_STAT));
+    ESP_LOGD(TAG,test);
+    sprintf(test,"FIFO STAT %02x",this->read_register(FIFO_STAT));
+    ESP_LOGD(TAG,test);
+  });
 }
 
 void TRF7962A::dump_config() {
@@ -36,6 +43,7 @@ void TRF7962A::loop() {
   //check interrupts
   uint8_t irq = read_register(TRF7962A_REG::IRQ_STAT);
   if(irq) {
+    ESP_LOGD(TAG,"IRQ received"+irq);
     if(irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
       uint8_t length = read_register(TRF7962A_REG::FIFO_STAT);
       if (length & 0x10) {
