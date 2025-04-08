@@ -116,6 +116,7 @@ void TRF7962A::loop() {
 void TRF7962A::send_command(TRF7962A_CMD command) {
   enable();
   write_byte(command);
+  write_byte(0);
   disable();
 }
 
