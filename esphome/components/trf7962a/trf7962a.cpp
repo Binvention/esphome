@@ -14,7 +14,7 @@ static const char *const TAG = "trf7962a";
 
 void TRF7962A::setup() {
   this->spi_setup();
-  this->cs_->digital_write(false);
+  this->cs_->digital_write(true);
   this->irq_pin_->setup();
   this->send_command(TRF7962A_CMD::SOFT_INIT);
   this->send_command(TRF7962A_CMD::IDLING);
@@ -56,7 +56,9 @@ void TRF7962A::loop() {
   }
   //check if feild is on
   if(this->field_on_){
-    ISO15693_get_random_slixl_();
+    if(transfer_status_ == NO_TRANSACTIONS || transfer_status_ == RECEIVE_COMPLETE){
+      ISO15693_get_random_slixl_();
+    }
     // ISO15693_RESULT result;
     // result = ISO15693_get_random_slixl_(last_random_);
 
@@ -147,11 +149,13 @@ TRANSFER_STATUS TRF7962A::get_last_transfer_status(){
 void TRF7962A::turn_field_off_(){
   this->write_register(TRF7962A_REG::CHIP_STAT,0X01);
   field_on_ = true;
+  ESP_LOGD(TAG, "field on");
 }
 
 void TRF7962A::turn_field_on_(){
   this->write_register(TRF7962A_REG::CHIP_STAT,0X21);
   field_on_ = false;
+  ESP_LOGD(TAG, "field off");
 }
 
 ISO15693_RESULT TRF7962A::ISO15693_send_single_slot_inventory_(uint8_t* uid){
