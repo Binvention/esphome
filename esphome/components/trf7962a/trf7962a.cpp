@@ -14,7 +14,6 @@ static const char *const TAG = "trf7962a";
 
 void TRF7962A::setup() {
   this->spi_setup();
-  this->cs_->digital_write(true);
   this->irq_pin_->setup();
   this->send_command(TRF7962A_CMD::SOFT_INIT);
   this->send_command(TRF7962A_CMD::IDLING);
