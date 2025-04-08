@@ -103,15 +103,14 @@ void TRF7962A::loop() {
 
 void TRF7962A::send_command(TRF7962A_CMD command) {
   enable();
-  transfer_byte(command);
+  write_byte(command);
   disable();
 }
 
 uint8_t TRF7962A::read_register(TRF7962A_REG reg){
   uint8_t data;
   enable();
-  transfer_byte(reg | TRF7962A_TRANS_TYPE::READ);
-  transfer_byte(TRF7962A_TRANS_TYPE::IDLE);
+  write_byte(reg | TRF7962A_TRANS_TYPE::READ);
   data = read_byte();
   disable();
   ESP_LOGVV(TAG, "read_register_(%d) -> %d", reg, data);
@@ -120,8 +119,8 @@ uint8_t TRF7962A::read_register(TRF7962A_REG reg){
 
 void TRF7962A::write_register(TRF7962A_REG reg, uint8_t value){
   enable();
-  transfer_byte(reg);
-  transfer_byte(value);
+  write_byte(reg);
+  write_byte(value);
   disable();
   ESP_LOGVV(TAG, "write_register_(%d,%d)",reg,value);
 }
@@ -129,8 +128,8 @@ void TRF7962A::write_register(TRF7962A_REG reg, uint8_t value){
 void TRF7962A::read_rx_bytes(uint8_t length) {
   enable();
   for(uint8_t i = 0; i <= length; i++) {
-    transfer_byte(TRF7962A_REG::FIFO_IO_REG | TRF7962A_TRANS_TYPE::READ);
-    rx_buff_.push_back(transfer_byte(TRF7962A_TRANS_TYPE::IDLE));
+    write_byte(TRF7962A_REG::FIFO_IO_REG | TRF7962A_TRANS_TYPE::READ);
+    rx_buff_.push_back(read_byte());
     ESP_LOGD(TAG,"byte received %02x",rx_buff_.back());
   }
   disable();
@@ -168,14 +167,14 @@ ISO15693_RESULT TRF7962A::ISO15693_send_single_slot_inventory_(uint8_t* uid){
 
 void TRF7962A::ISO15693_get_random_slixl_(){
   enable();
-  transfer_byte(TRF7962A_CMD::RESET_FIFO); 
-  transfer_byte(TRF7962A_CMD::TRANSMIT_CRC); 
-  transfer_byte(TRF7962A_REG::TX_LEN_B1|TRF7962A_TRANS_TYPE::CONTINUOUS);
-  transfer_byte(0x00);
-  transfer_byte(0x30);
-  transfer_byte(0x02);//ISO15693_REQ_DATARATE_HIGH
-  transfer_byte(0xB2); //get random number
-  transfer_byte(0x04); //NXP manufacturer 
+  write_byte(TRF7962A_CMD::RESET_FIFO); 
+  write_byte(TRF7962A_CMD::TRANSMIT_CRC); 
+  write_byte(TRF7962A_REG::TX_LEN_B1|TRF7962A_TRANS_TYPE::CONTINUOUS);
+  write_byte(0x00);
+  write_byte(0x30);
+  write_byte(0x02);//ISO15693_REQ_DATARATE_HIGH
+  write_byte(0xB2); //get random number
+  write_byte(0x04); //NXP manufacturer 
   disable();
   transfer_status_ = TRANSFER_STATUS::RECEIVE_WAIT;
   ESP_LOGD(TAG, "send get random number to SLIXL");
