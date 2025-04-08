@@ -163,6 +163,8 @@ class TRF7962A : public Component, public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRS
   std::vector<uint8_t> rx_buff_;
   ISO15693_RESULT last_result_;
   // LOOP_STATUS loop_status_;
+  const spi::SPIMode read_mode_ = spi::SPIMode::MODE1;
+  const spi::SPIMode write_mode_ = spi::SPIMode::MODE0;
 
 };
 

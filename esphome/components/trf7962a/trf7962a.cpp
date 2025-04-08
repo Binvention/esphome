@@ -14,7 +14,7 @@ static const char *const TAG = "trf7962a";
 
 void TRF7962A::setup() {
   this->spi_setup();
-  this->set_mode(spi::SPIMode::MODE0);//default to writing mode
+  this->set_mode(write_mode_);//default to writing mode
   this->irq_pin_->setup();
   this->send_command(TRF7962A_CMD::SOFT_INIT);
   this->send_command(TRF7962A_CMD::IDLING);
@@ -31,6 +31,8 @@ void TRF7962A::setup() {
     ISO15693_get_random_slixl_();
     ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
     ESP_LOGD(TAG,"FIFO STAT %02x",this->read_register(FIFO_STAT));
+    write_register(CHIP_STAT,0x21);
+    ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
   });
 }
 
@@ -43,10 +45,10 @@ void TRF7962A::loop() {
   //check interrupts
   enable();
   write_byte(IRQ_STAT|READ);
-  set_mode(spi::SPIMode::MODE1); //switch to reading mode
+  set_mode(read_mode_); //switch to reading mode
   uint8_t irq = read_byte();
   read_byte(); //dummy read needed to clear irq
-  set_mode(spi::SPIMode::MODE0);//set back to write mode
+  set_mode(write_mode_);//set back to write mode
   disable();
   if(irq) {
     ESP_LOGD(TAG,"IRQ received"+irq);
@@ -118,9 +120,9 @@ uint8_t TRF7962A::read_register(TRF7962A_REG reg){
   uint8_t data;
   enable();
   write_byte(reg | TRF7962A_TRANS_TYPE::READ);
-  set_mode(spi::SPIMode::MODE1); //set to read mode
+  set_mode(read_mode_); //set to read mode
   data = read_byte();
-  set_mode(spi::SPIMode::MODE0); //set back to write mode
+  set_mode(write_mode_); //set back to write mode
   disable();
   ESP_LOGVV(TAG, "read_register_(%d) -> %d", reg, data);
   return data;
@@ -137,12 +139,12 @@ void TRF7962A::write_register(TRF7962A_REG reg, uint8_t value){
 void TRF7962A::read_rx_bytes(uint8_t length) {
   enable();
   write_byte(TRF7962A_REG::FIFO_IO_REG | TRF7962A_TRANS_TYPE::READ | TRF7962A_TRANS_TYPE::CONTINUOUS);
-  set_mode(spi::SPIMode::MODE1);
+  set_mode(read_mode_);
   for(uint8_t i = 0; i <= length; i++) {
     rx_buff_.push_back(read_byte());
     ESP_LOGD(TAG,"byte received %02x",rx_buff_.back());
   }
-  set_mode(spi::SPIMode::MODE0);
+  set_mode(write_mode_);
   disable();
 }
 
