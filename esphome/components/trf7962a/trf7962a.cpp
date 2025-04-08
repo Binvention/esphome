@@ -24,6 +24,7 @@ void TRF7962A::setup() {
   this->write_register(TRF7962A_REG::TX_PULSE_LEN,0x80);
   this->write_register(TRF7962A_REG::CHIP_STAT,0b00100001);
   this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
+  set_interval("get_random",1000,[this](){ISO15693_get_random_slixl_();});
 }
 
 void TRF7962A::dump_config() {
@@ -55,7 +56,6 @@ void TRF7962A::loop() {
   }
   //check if feild is on
   if(this->field_on_){
-      ISO15693_get_random_slixl_();
     // ISO15693_RESULT result;
     // result = ISO15693_get_random_slixl_(last_random_);
 
