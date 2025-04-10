@@ -16,29 +16,53 @@ void TRF7962A::setup() {
   this->spi_setup();
   this->set_mode(write_mode_);//default to writing mode
   this->irq_pin_->setup();
-  this->send_command(TRF7962A_CMD::SOFT_INIT);
-  this->send_command(TRF7962A_CMD::IDLING);
-  this->set_timeout(50,[this](){
-    this->send_command(TRF7962A_CMD::RESET_FIFO);
-    this->write_register(TRF7962A_REG::ISO_CONTROL,0b10000010);
-    this->write_register(TRF7962A_REG::COL_POS_IRQ_MASK,0b00111110);
-    this->write_register(TRF7962A_REG::MOD_SYS_CLK_CTRL,0b00100001);
-    this->write_register(TRF7962A_REG::TX_PULSE_LEN,0x80);
-    this->write_register(TRF7962A_REG::CHIP_STAT,0b00100001);
-  });
   this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
   this->set_interval("get_random",1000,[this](){
-    this->ISO15693_get_random_slixl_();
-    ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
-    ESP_LOGD(TAG,"FIFO STAT %02x",this->read_register(FIFO_STAT));
-    this->write_register(CHIP_STAT,0x21);
-    ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
+    this->send_command(TRF7962A_CMD::SOFT_INIT);
+    this->send_command(TRF7962A_CMD::IDLING);
+    this->set_timeout(50,[this](){
+      this->send_command(TRF7962A_CMD::RESET_FIFO);
+      this->write_register(TRF7962A_REG::ISO_CONTROL,0b10000010);
+      this->write_register(TRF7962A_REG::COL_POS_IRQ_MASK,0b00111110);
+      this->write_register(TRF7962A_REG::MOD_SYS_CLK_CTRL,0b00100001);
+      this->write_register(TRF7962A_REG::TX_PULSE_LEN,0x80);
+      this->write_register(TRF7962A_REG::CHIP_STAT,0b00100001);
+      this->ISO15693_get_random_slixl_();
+      ESP_LOGD(TAG,"Chip stat %02x",this->read_register(CHIP_STAT));
+      ESP_LOGD(TAG,"FIFO STAT %02x",this->read_register(FIFO_STAT));
+      this->write_register(CHIP_STAT,0x21);
+      this->dump_registers();      
+    });
   });
 }
 
 void TRF7962A::dump_config() {
   ESP_LOGCONFIG(TAG, "TRF7962A:");
   LOG_PIN("  IRQ pin: ", this->irq_pin_);
+}
+
+void TRF7962A::dump_registers() {
+  //main control registers
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(CHIP_STAT));
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(ISO_CONTROL)); // ISO protocol control
+    // Protocol Settings
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(TX_PULSE_LEN)); //TX Pulse-Length Control
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(RX_NO_RESP_WAIT)); //RX no response wait time
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(RX_WAIT_TIME)); // RX Wait Time
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(MOD_SYS_CLK_CTRL)); // Modulator and SYS_CLK Control
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(RX_SPECIAL_SET)); // RX Special Setting
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(REG_IO_CTRL)); //Regulator and I/O Control
+    // Status Registers
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(IRQ_STAT)); //IRQ Status
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(COL_POS_IRQ_MASK)); // Collision Position and Interrupt Mask Register
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(COL_POS)); // Collision Position
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(RSSI_LEV_OS_STAT)); // RSSI Levels and Oscillator Status
+    // FIFO Registers
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(TEST1)); // test
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(TEST2)); // test
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(FIFO_STAT)); //FIFO status
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(TX_LEN_B1)); // TX Length Byte 1
+  ESP_LOGD(TAG, "  Chip stat: 0x%02X", this->read_register(TX_LEN_B2)); // TX Length Byte 2
 }
 
 void TRF7962A::loop() {

@@ -63,7 +63,7 @@ enum TRF7962A_REG : uint8_t {
   COL_POS_IRQ_MASK = 0x0D, // Collision Position and Interrupt Mask Register
   COL_POS = 0x0E, // Collision Position
   RSSI_LEV_OS_STAT = 0x0F, // RSSI Levels and Oscillator Status
-  // FIFO rEGISTERS
+  // FIFO Registers
   TEST1 = 0x1A, // test
   TEST2 = 0x1B, // test
   FIFO_STAT = 0x1C, //FIFO status
@@ -121,6 +121,7 @@ class TRF7962A : public Component, public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRS
  public:
   void setup() override;
   void dump_config() override;
+  void dump_registers();
   float get_setup_priority() const override { return setup_priority::DATA; }
   void loop() override;
 
