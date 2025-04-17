@@ -47,7 +47,7 @@ CONFIG_SCHEMA = (
             cv.Required(CONF_IRQ_PIN): pins.gpio_input_pin_schema,
             cv.Required(CONF_TAG_TYPES): cv.ensure_list(
                 {
-                    cv.Required("type"): cv.enum(),
+                    cv.Required("type"): cv.enum(ISO15693_TAG_TYPES),
                     cv.Optional("password"): cv.hex_int(upper="ICODE_SLIX"),
                 }
             ),
