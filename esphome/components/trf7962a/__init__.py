@@ -22,10 +22,8 @@ TRF7962ATrigger = trf7962a_ns.class_(
 
 ISO15693_tag_types = trf7962a_ns.enum("TAG_TYPES")
 ISO15693_TAG_TYPES = {
-    {
-        "STANDARD": ISO15693_tag_types.STANDARD,
-        "ICODE_SLIX": ISO15693_tag_types.ICODE_SLIX,
-    }
+    "STANDARD": ISO15693_tag_types.STANDARD,
+    "ICODE_SLIX": ISO15693_tag_types.ICODE_SLIX,
 }
 
 
