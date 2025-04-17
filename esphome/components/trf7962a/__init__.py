@@ -20,11 +20,9 @@ TRF7962ATrigger = trf7962a_ns.class_(
     "TRF7962ATrigger", automation.Trigger.template(cg.std_string)
 )
 
-ISO15693_TAG_TYPE = {"STANDARD", "ICODE_SLIX"}
-
 ISO15693_TAG_TYPE_SCHEMA = cv.Schema(
     {
-        cv.Required("type"): cv.enum(ISO15693_TAG_TYPE),
+        cv.Required("type"): cv.enum({"STANDARD", "ICODE_SLIX"}),
         cv.Optional("password"): cv.hex_int(upper="ICODE_SLIX"),
     }
 )
