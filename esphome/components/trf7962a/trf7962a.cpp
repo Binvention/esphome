@@ -124,6 +124,7 @@ void TRF7962A::loop() {
             this->set_interval("search_standard", 1000, [this]() { this->ISO15693_send_single_slot_inventory_(); });
           });
         }
+        is_searching_ = true;
       }
     }
     // ISO15693_RESULT result;
