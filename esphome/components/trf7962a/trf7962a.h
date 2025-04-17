@@ -10,10 +10,10 @@
 namespace esphome {
 namespace trf7962a {
 
-class TRF7962ATrigger: public Trigger<std::string> {
-  public:
-   void process(std::vector<uint8_t> &data);
- };
+class TRF7962ATrigger : public Trigger<std::string> {
+ public:
+  void process(std::vector<uint8_t> &data);
+};
 
 enum ISO15693_RESULT : uint8_t {
   RESULT_NO_RESPONSE = 0x00,
@@ -37,41 +37,33 @@ enum ISO15693_RESULT : uint8_t {
   READ_SINGLE_BLOCK_INVALID_RESPONSE = 0x42,
 };
 
-enum TRANSFER_STATUS {
-  NO_TRANSACTIONS = 0x00,
-  TRANSMIT_COMPLETE = 0x01,
-  RECEIVE_COMPLETE = 0x02,
-  TRANSMIT_ERROR = 0x03,
-  RECEIVE_WAIT = 0x04,
-  RECEIVE_WAIT_EXTENSION = 0x05,
-  TRANSMIT_WAIT = 0x06
-};
+enum TRANSFER_STATUS { NO_TRANSACTIONS = 0x00, WAIT_RANDOM = 0x01, WAIT_INVENTORY = 0x02 };
 // registers (defaults to write must set type to make it read/continuous)
 enum TRF7962A_REG : uint8_t {
-  //main control registers
-  CHIP_STAT = 0x00, // Chip Status Control
-  ISO_CONTROL = 0x01, // ISO protocol control
+  // main control registers
+  CHIP_STAT = 0x00,    // Chip Status Control
+  ISO_CONTROL = 0x01,  // ISO protocol control
   // Protocol Settings
-  TX_PULSE_LEN = 0x06, //TX Pulse-Length Control
-  RX_NO_RESP_WAIT = 0x07, //RX no response wait time
-  RX_WAIT_TIME = 0x08, // RX Wait Time
-  MOD_SYS_CLK_CTRL = 0x09, // Modulator and SYS_CLK Control
-  RX_SPECIAL_SET = 0x0A, // RX Special Setting
-  REG_IO_CTRL =  0x0B, //Regulator and I/O Control
+  TX_PULSE_LEN = 0x06,      // TX Pulse-Length Control
+  RX_NO_RESP_WAIT = 0x07,   // RX no response wait time
+  RX_WAIT_TIME = 0x08,      // RX Wait Time
+  MOD_SYS_CLK_CTRL = 0x09,  // Modulator and SYS_CLK Control
+  RX_SPECIAL_SET = 0x0A,    // RX Special Setting
+  REG_IO_CTRL = 0x0B,       // Regulator and I/O Control
   // Status Registers
-  IRQ_STAT = 0x0C, //IRQ Status
-  COL_POS_IRQ_MASK = 0x0D, // Collision Position and Interrupt Mask Register
-  COL_POS = 0x0E, // Collision Position
-  RSSI_LEV_OS_STAT = 0x0F, // RSSI Levels and Oscillator Status
+  IRQ_STAT = 0x0C,          // IRQ Status
+  COL_POS_IRQ_MASK = 0x0D,  // Collision Position and Interrupt Mask Register
+  COL_POS = 0x0E,           // Collision Position
+  RSSI_LEV_OS_STAT = 0x0F,  // RSSI Levels and Oscillator Status
   // FIFO Registers
-  TEST1 = 0x1A, // test
-  TEST2 = 0x1B, // test
-  FIFO_STAT = 0x1C, //FIFO status
-  TX_LEN_B1 = 0x1D, // TX Length Byte 1
-  TX_LEN_B2 = 0x1E, // TX Length Byte 2
-  FIFO_IO_REG = 0x1F // FIFO I/O rEGISTER
+  TEST1 = 0x1A,       // test
+  TEST2 = 0x1B,       // test
+  FIFO_STAT = 0x1C,   // FIFO status
+  TX_LEN_B1 = 0x1D,   // TX Length Byte 1
+  TX_LEN_B2 = 0x1E,   // TX Length Byte 2
+  FIFO_IO_REG = 0x1F  // FIFO I/O rEGISTER
 };
-//commands given over spi (command bit already included)
+// commands given over spi (command bit already included)
 enum TRF7962A_CMD : uint8_t {
   IDLING = 0x80,
   SOFT_INIT = 0x83,
@@ -87,12 +79,8 @@ enum TRF7962A_CMD : uint8_t {
   TEST_EXTERNAL_RF = 0x99,
   RECEIVER_GAIN_ADJ = 0x9A
 };
-//type of register transaction (default (0x00) is write)
-enum TRF7962A_TRANS_TYPE: uint8_t {
-  IDLE = 0x00,
-  READ = 0x40,
-  CONTINUOUS = 0x20
-};
+// type of register transaction (default (0x00) is write)
+enum TRF7962A_TRANS_TYPE : uint8_t { IDLE = 0x00, READ = 0x40, CONTINUOUS = 0x20 };
 
 enum TRF7962A_IRQ_STAT : uint8_t {
   NO_RESPONSE = 0x01,
@@ -114,10 +102,22 @@ enum TRF7962A_IRQ_STAT : uint8_t {
 //   RESET
 // };
 
+enum class ISO15693_TAG_TYPE : uint8_t { ICODE_SLIX, STANDARD };
 
+class ISO15693_TAG {
+ public:
+  ISO15693_TAG(ISO15693_TAG_TYPE type, bool has_password, uint32_t password = 0);
+  ISO15693_TAG_TYPE type() const { return type_; }
+  bool has_password() const { return has_password_; }
+  uint32_t password() const { return password_; }
+  ISO15693_TAG_TYPE type_;
+  bool has_password_;
+  uint32_t password_;
+};
 
-class TRF7962A : public Component, public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, 
-                              spi::CLOCK_POLARITY_LOW, spi::CLOCK_PHASE_LEADING, spi::DATA_RATE_4MHZ>{
+class TRF7962A : public Component,
+                 public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, spi::CLOCK_POLARITY_LOW, spi::CLOCK_PHASE_LEADING,
+                                       spi::DATA_RATE_4MHZ> {
  public:
   void setup() override;
   void dump_config() override;
@@ -129,7 +129,7 @@ class TRF7962A : public Component, public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRS
 
   void register_ontag_trigger(TRF7962ATrigger *trig) { this->triggers_ontag_.push_back(trig); }
   void register_ontagremoved_trigger(TRF7962ATrigger *trig) { this->triggers_ontagremoved_.push_back(trig); }
-  
+
   void send_command(TRF7962A_CMD command);
   uint8_t read_register(TRF7962A_REG reg);
   void write_register(TRF7962A_REG reg, uint8_t value);
@@ -139,34 +139,38 @@ class TRF7962A : public Component, public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRS
   ISO15693_RESULT get_last_result();
   TRANSFER_STATUS get_last_transfer_status();
 
+  void add_password(uint32_t password);
+  void add_slix();
+  void add_standard();
+
  protected:
   void turn_field_on_();
   void turn_field_off_();
 
-  ISO15693_RESULT ISO15693_send_single_slot_inventory_(uint8_t* uid);
-  void ISO15693_get_random_slixl_();
-  ISO15693_RESULT ISO15693_set_pass_slixl_(uint8_t pass_id, uint32_t password);
-  ISO15693_RESULT ISO15693_read_single_block_(uint8_t blockId, uint8_t* blockData);
+  void ISO15693_send_single_slot_inventory_();
+  void ISO15693_get_random_slix_();
+  void ISO15693_set_pass_slix_(uint8_t pass_id, uint32_t password);
+  void ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData);
 
-
-  uint32_t known_passwords_[3] = { 0x7FFD6E5B, 0x0F0F0F0F, 0x00000000 };
+  std::vector<uint32_t> passwords_;  //= { 0x7FFD6E5B, 0x0F0F0F0F, 0x00000000 };
   GPIOPin *irq_pin_{nullptr};
 
   std::vector<TRF7962ATrigger *> triggers_ontag_;
   std::vector<TRF7962ATrigger *> triggers_ontagremoved_;
-  
-  
-  std::vector<uint8_t> tag_uid_;
+
+  uint64_t tag_uid_;
   // TAG_EVENT tag_status_;
   bool field_on_;
   uint16_t last_random_;
   TRANSFER_STATUS transfer_status_;
-  std::vector<uint8_t> rx_buff_;
+  std::deque<uint8_t> rx_buff_;
   ISO15693_RESULT last_result_;
   // LOOP_STATUS loop_status_;
   const spi::SPIMode read_mode_ = spi::SPIMode::MODE1;
   const spi::SPIMode write_mode_ = spi::SPIMode::MODE0;
-
+  bool check_slix_ = false;
+  bool check_standard_ = false;
+  bool is_searching_ = false;
 };
 
 }  // namespace trf7962a
