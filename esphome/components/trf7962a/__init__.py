@@ -66,10 +66,10 @@ async def to_code(config):
     pin = await cg.gpio_pin_expression(config[CONF_IRQ_PIN])
     cg.add(var.set_irq_pin(pin))
     for type in config[CONF_TAG_TYPES]:
-        if type.type == ISO15693_tag_types.ICODE_SLIX:
+        if type["type"] == ISO15693_tag_types.ICODE_SLIX:
             cg.add(var.add_slix())
-            if type.password:
-                cg.add(var.add_password(type.password))
+            if type["password"]:
+                cg.add(var.add_password(type["password"]))
         else:
             cg.add(var.add_standard())
 
