@@ -20,6 +20,15 @@ TRF7962ATrigger = trf7962a_ns.class_(
     "TRF7962ATrigger", automation.Trigger.template(cg.std_string)
 )
 
+ISO15693_tag_types = trf7962a_ns.enum("TAG_TYPES")
+ISO15693_TAG_TYPES = {
+    {
+        "STANDARD": ISO15693_tag_types.STANDARD,
+        "ICODE_SLIX": ISO15693_tag_types.ICODE_SLIX,
+    }
+}
+
+
 CONF_TAG_TYPES = "tag_types"
 
 
@@ -40,7 +49,7 @@ CONFIG_SCHEMA = (
             cv.Required(CONF_IRQ_PIN): pins.gpio_input_pin_schema,
             cv.Required(CONF_TAG_TYPES): cv.ensure_list(
                 {
-                    cv.Required("type"): cv.enum({"STANDARD", "ICODE_SLIX"}),
+                    cv.Required("type"): cv.enum(),
                     cv.Optional("password"): cv.hex_int(upper="ICODE_SLIX"),
                 }
             ),
@@ -59,7 +68,7 @@ async def to_code(config):
     pin = await cg.gpio_pin_expression(config[CONF_IRQ_PIN])
     cg.add(var.set_irq_pin(pin))
     for type in config[CONF_TAG_TYPES]:
-        if type.type == "ICODE_SLIX":
+        if type.type == ISO15693_tag_types.ICODE_SLIX:
             cg.add(var.add_slix())
             if type.password:
                 cg.add(var.add_password(type.password))
