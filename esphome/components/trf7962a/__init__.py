@@ -48,7 +48,7 @@ CONFIG_SCHEMA = (
             cv.Required(CONF_TAG_TYPES): cv.ensure_list(
                 {
                     cv.Required("type"): cv.enum(ISO15693_TAG_TYPES),
-                    cv.Optional("password"): cv.hex_int(),
+                    cv.Optional("password"): cv.hex_int,
                 }
             ),
         }
