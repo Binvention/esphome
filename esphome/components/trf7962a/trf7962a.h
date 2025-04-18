@@ -37,7 +37,7 @@ enum ISO15693_RESULT : uint8_t {
   READ_SINGLE_BLOCK_INVALID_RESPONSE = 0x42,
 };
 
-enum TRANSFER_STATUS { NO_TRANSACTIONS = 0x00, WAIT_RANDOM = 0x01, WAIT_INVENTORY = 0x02 };
+enum TRANSFER_STATUS { NO_TRANSACTIONS = 0x00, WAIT_RANDOM = 0x01, WAIT_INVENTORY = 0x02, WAIT_PASSWORD = 0x03 };
 // registers (defaults to write must set type to make it read/continuous)
 enum TRF7962A_REG : uint8_t {
   // main control registers
@@ -149,19 +149,20 @@ class TRF7962A : public Component,
 
   void ISO15693_send_single_slot_inventory_();
   void ISO15693_get_random_slix_();
-  void ISO15693_set_pass_slix_(uint8_t pass_id, uint32_t password);
+  void ISO15693_unlock_privacy_slix_(const uint8_t password[4]);
   void ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData);
 
-  std::vector<uint32_t> passwords_;  //= { 0x7FFD6E5B, 0x0F0F0F0F, 0x00000000 };
+  std::vector<uint8_t[4]> passwords_;  //= { 0x7FFD6E5B, 0x0F0F0F0F, 0x00000000 };
+  std::vector<uint8_t[4]>::const_iterator c_password_;
   GPIOPin *irq_pin_{nullptr};
 
   std::vector<TRF7962ATrigger *> triggers_ontag_;
   std::vector<TRF7962ATrigger *> triggers_ontagremoved_;
 
-  uint64_t tag_uid_;
+  uint8_t tag_uid_[8];
   // TAG_EVENT tag_status_;
   bool field_on_;
-  uint16_t last_random_;
+  uint8_t last_random_[2];
   TRANSFER_STATUS transfer_status_;
   std::deque<uint8_t> rx_buff_;
   ISO15693_RESULT last_result_;
@@ -171,6 +172,9 @@ class TRF7962A : public Component,
   bool check_slix_ = false;
   bool check_standard_ = false;
   bool is_searching_ = false;
+  const std::string search_slix_ = "search_slix";
+  const std::string search_standard_ = "search_standard";
+  const std::string try_password_ = "try_password";
 };
 
 }  // namespace trf7962a
