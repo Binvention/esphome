@@ -320,11 +320,9 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const uint8_t password[4]) {
 void TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData) {}
 
 void TRF7962A::add_password(uint32_t password) {
-  passwords_.push_back({});
-  passwords_.back()[0] = password & 0xFF;
-  passwords_.back()[1] = (password >> 8) & 0xFF;
-  passwords_.back()[2] = (password >> 16) & 0xFF;
-  passwords_.back()[3] = (password >> 24) & 0xFF;
+  std::array<uint8_t, 4> password_bytes = {(password >> 0) & 0xFF, (password >> 8) & 0xFF, (password >> 16) & 0xFF,
+                                           (password >> 24) & 0xFF};
+  passwords_.push_back(password_bytes);
 }
 
 void TRF7962A::add_slix() { check_slix_ = true; }
