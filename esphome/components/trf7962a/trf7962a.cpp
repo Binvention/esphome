@@ -69,7 +69,7 @@ void TRF7962A::loop() {
     if (irq_pin_->digital_read()) {
       ESP_LOGVV(TAG, "IRQ Pin high");
       this->enable();
-      this->write_byte(IRQ_STAT | READ);
+      this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
       this->set_mode(read_mode_);  // switch to reading mode
       uint8_t irq = this->read_byte();
       this->read_byte();            // dummy read needed to clear irq
@@ -216,7 +216,7 @@ void TRF7962A::send_command(TRF7962A_CMD command) {
 uint8_t TRF7962A::read_register(TRF7962A_REG reg) {
   uint8_t data;
   this->enable();
-  this->write_byte(reg | TRF7962A_TRANS_TYPE::READ);
+  this->write_byte((uint8_t) reg | (uint8_t) TRF7962A_TRANS_TYPE::READ);
   this->set_mode(read_mode_);  // set to read mode
   data = this->read_byte();
   this->set_mode(write_mode_);  // set back to write mode
@@ -235,7 +235,8 @@ void TRF7962A::write_register(TRF7962A_REG reg, uint8_t value) {
 
 void TRF7962A::read_rx_bytes(uint8_t length) {
   this->enable();
-  this->write_byte(TRF7962A_REG::FIFO_IO_REG | TRF7962A_TRANS_TYPE::READ | TRF7962A_TRANS_TYPE::CONTINUOUS);
+  this->write_byte((uint8_t) TRF7962A_REG::FIFO_IO_REG | (uint8_t) TRF7962A_TRANS_TYPE::READ |
+                   (uint8_t) TRF7962A_TRANS_TYPE::CONTINUOUS);
   this->set_mode(read_mode_);
   for (uint8_t i = 0; i <= length; i++) {
     this->rx_buff_.push_back(read_byte());
@@ -267,7 +268,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
-  this->write_byte(TRF7962A_REG::TX_LEN_B1 | TRF7962A_TRANS_TYPE::CONTINUOUS);
+  this->write_byte((uint8_t) TRF7962A_REG::TX_LEN_B1 | (uint8_t) TRF7962A_TRANS_TYPE::CONTINUOUS);
   this->write_byte(0x00);
   this->write_byte(0x30);
   this->write_byte(0x26);  // flags
@@ -282,7 +283,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
-  this->write_byte(TRF7962A_REG::TX_LEN_B1 | TRF7962A_TRANS_TYPE::CONTINUOUS);
+  this->write_byte((uint8_t) TRF7962A_REG::TX_LEN_B1 | (uint8_t) TRF7962A_TRANS_TYPE::CONTINUOUS);
   this->write_byte(0x00);
   this->write_byte(tag_uid_[0] ? 0xb0 : 0x30);
   this->write_byte(0x02);  // ISO15693_REQ_DATARATE_HIGH
@@ -301,7 +302,7 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const uint8_t password[4]) {
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
-  this->write_byte(TRF7962A_REG::TX_LEN_B1 | TRF7962A_TRANS_TYPE::CONTINUOUS);
+  this->write_byte((uint8_t) TRF7962A_REG::TX_LEN_B1 | (uint8_t) TRF7962A_TRANS_TYPE::CONTINUOUS);
   this->write_byte(0x00);
   this->write_byte(0x80);
   this->write_byte(0x02);  // ISO15693_REQ_DATARATE_HIGH
@@ -319,7 +320,7 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const uint8_t password[4]) {
 void TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData) {}
 
 void TRF7962A::add_password(uint32_t password) {
-  passwords_.push_back({0});
+  passwords_.push_back({});
   passwords_.back()[0] = password & 0xFF;
   passwords_.back()[1] = (password >> 8) & 0xFF;
   passwords_.back()[2] = (password >> 16) & 0xFF;

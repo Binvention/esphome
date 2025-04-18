@@ -152,8 +152,8 @@ class TRF7962A : public Component,
   void ISO15693_unlock_privacy_slix_(const uint8_t password[4]);
   void ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData);
 
-  std::vector<uint8_t[4]> passwords_;  //= { 0x7FFD6E5B, 0x0F0F0F0F, 0x00000000 };
-  std::vector<uint8_t[4]>::const_iterator c_password_;
+  std::vector<std::array<uint8_t, 4>> passwords_;  //= { 0x7FFD6E5B, 0x0F0F0F0F, 0x00000000 };
+  std::vector<std::array<uint8_t, 4>>::const_iterator c_password_;
   GPIOPin *irq_pin_{nullptr};
 
   std::vector<TRF7962ATrigger *> triggers_ontag_;
