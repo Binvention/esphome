@@ -298,7 +298,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
   ESP_LOGD(TAG, "send get random number to SLIXL");
 }
 
-void TRF7962A::ISO15693_unlock_privacy_slix_(const uint8_t password[4]) {
+void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password) {
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
