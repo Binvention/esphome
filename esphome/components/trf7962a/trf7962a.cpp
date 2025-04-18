@@ -91,9 +91,9 @@ void TRF7962A::loop() {
                 ESP_LOGE(TAG, "only two items should be in the rx buffer but there are actually %0d items in buffer",
                          this->rx_buff_.size());
               } else {
-                this->last_random_[0] = this->rx_buff_[0];
-                this->last_random_[1] = this->rx_buff_[1];
-                ESP_LOGD(TAG, "New random recieved %x", this->last_random_);
+                this->last_random_[1] = this->rx_buff_[0];
+                this->last_random_[0] = this->rx_buff_[1];
+                ESP_LOGD(TAG, "New random recieved %x%x", this->last_random_[1], this->last_random_[0]);
                 if (is_searching_) {
                   // stop new searches while processing the current tag
                   this->cancel_interval(search_slix_);
@@ -176,7 +176,7 @@ void TRF7962A::loop() {
           if (length & 0x40) {
             this->read_rx_bytes(length & 0x0f);
           }
-        } else if (irq & NO_RESPONSE) {
+        } else if (transfer_status_ != TRANSFER_STATUS::NO_TRANSACTIONS) {
           if (tag_uid_[0]) {
             tag_uid_[0] = 0;
           }
