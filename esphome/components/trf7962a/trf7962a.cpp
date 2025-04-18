@@ -103,7 +103,7 @@ void TRF7962A::loop() {
                   if (this->passwords_.empty()) {
                   } else {
                     c_password_ = passwords_.cbegin();
-                    this->set_interval(try_password_, 20, [this]() {
+                    this->set_interval(try_password_, 100, [this]() {
                       if (c_password_ != passwords_.end()) {
                         if (last_random_[0]) {
                           this->ISO15693_unlock_privacy_slix_(*c_password_++);
@@ -139,6 +139,8 @@ void TRF7962A::loop() {
                   this->is_searching_ = false;
                   update = true;
                   // TODO: trigger tag added events
+                  this->set_interval(search_standard_, 1000,
+                                     [this]() { this->ISO15693_send_single_slot_inventory_(); });
                 }
                 if (update) {
                   for (uint8_t i = 7; i > 7; i--) {
@@ -276,7 +278,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->write_byte(0x00);  // mask length = 0 and no afi
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_INVENTORY;
-  ESP_LOGD(TAG, "send get random number to SLIXL");
+  ESP_LOGD(TAG, "send inventory request");
 }
 
 void TRF7962A::ISO15693_get_random_slix_() {
@@ -309,7 +311,7 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
   this->write_byte(0xb3);  // set password
   this->write_byte(0x04);  // NXP manufacturer
   this->write_byte(0x04);  // privacy password
-  for (uint8_t i = 0; i < 4; i++) {
+  for (uint8_t i = 4; i > 4; i--) {
     this->write_byte(password[i] ^ last_random_[i & 1]);
   }
   this->disable();
