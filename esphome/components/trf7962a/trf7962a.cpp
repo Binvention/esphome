@@ -28,7 +28,8 @@ void TRF7962A::setup() {
     this->write_register(TRF7962A_REG::CHIP_STAT, 0b00100001);
   });
   this->tag_uid_[0] = 0;
-  this->c_password_ = passwords_.end();
+  this->c_password_ = passwords_.cbegin();
+  this->set_timeout(100, [this]() { this->search_tag(); });
 }
 
 void TRF7962A::dump_config() {
@@ -62,151 +63,7 @@ void TRF7962A::dump_registers() {
   ESP_LOGD(TAG, "  TX_LEN_B2: 0x%02X", this->read_register(TX_LEN_B2));                // TX Length Byte 2
 }
 
-void TRF7962A::loop() {
-  // check if feild is on
-  if (this->field_on_) {
-    // check interrupts
-    if (irq_pin_->digital_read()) {
-      ESP_LOGVV(TAG, "IRQ Pin high");
-      this->enable();
-      this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
-      this->set_mode(read_mode_);  // switch to reading mode
-      uint8_t irq = this->read_byte();
-      this->read_byte();            // dummy read needed to clear irq
-      this->set_mode(write_mode_);  // set back to write mode
-      this->disable();
-      if (irq) {
-        ESP_LOGD(TAG, "IRQ received %0x", irq);
-        if (irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
-          uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
-          if (length & 0x10) {
-            ESP_LOGE(TAG, "Error FIFO overflow detected");
-          }
-          this->read_rx_bytes(length & 0x0f);
-          uint8_t flags = this->rx_buff_.front();
-          this->rx_buff_.pop_front();
-          switch (transfer_status_) {
-            case WAIT_RANDOM:
-              if (this->rx_buff_.size() != 2) {
-                ESP_LOGE(TAG, "only two items should be in the rx buffer but there are actually %0d items in buffer",
-                         this->rx_buff_.size());
-              } else {
-                this->last_random_[1] = this->rx_buff_[0];
-                this->last_random_[0] = this->rx_buff_[1];
-                ESP_LOGD(TAG, "New random recieved %x%x", this->last_random_[1], this->last_random_[0]);
-                if (is_searching_) {
-                  // stop new searches while processing the current tag
-                  this->cancel_interval(search_slix_);
-                  this->cancel_interval(search_standard_);
-                }
-                if (!tag_uid_[0]) {
-                  if (this->passwords_.empty()) {
-                  } else {
-                    c_password_ = passwords_.cbegin();
-                    this->set_interval(try_password_, 100, [this]() {
-                      if (c_password_ != passwords_.end()) {
-                        if (last_random_[0]) {
-                          this->ISO15693_unlock_privacy_slix_(*c_password_++);
-                        } else {
-                          this->ISO15693_get_random_slix_();
-                        }
-                      } else {
-                        this->cancel_interval(try_password_);
-                        this->is_searching_ = false;
-                        ESP_LOGE(TAG, "No provided passwords worked");
-                      }
-                    });
-                  }
-                }
-              }
-              break;
-            case WAIT_INVENTORY:
-              if (this->rx_buff_.size() != 9) {
-                ESP_LOGE(TAG, "only 9 items should be in the rx buffer but there are actually %0d items in buffer",
-                         this->rx_buff_.size());
-              } else {
-                bool update = false;
-                rx_buff_.pop_front();  // get rid of DSFID
-                if (this->tag_uid_[0]) {
-                  for (uint8_t i = 0; i < 8; i++) {
-                    if (this->tag_uid_[i] != this->rx_buff_[7 - i]) {
-                      // TODO: trigger tag removed events
-                      update = true;
-                      break;
-                    }
-                  }
-                } else {
-                  this->is_searching_ = false;
-                  update = true;
-                  // TODO: trigger tag added events
-                  this->set_interval(search_standard_, 1000,
-                                     [this]() { this->ISO15693_send_single_slot_inventory_(); });
-                }
-                if (update) {
-                  for (uint8_t i = 7; i > 7; i--) {
-                    tag_uid_[i] = rx_buff_[7 - i];
-                  }
-                  ESP_LOGD(TAG, "Tag UID: %02X%02X%02X%02X%02X%02X%02X%02X", tag_uid_[7], tag_uid_[6], tag_uid_[5],
-                           tag_uid_[4], tag_uid_[3], tag_uid_[2], tag_uid_[1], tag_uid_[0]);
-                }
-              }
-              break;
-            case WAIT_PASSWORD:
-              if (!flags) {
-                // no errors so password is successful
-                this->cancel_interval(try_password_);
-                ESP_LOGD(TAG, "Password successful");
-                this->ISO15693_send_single_slot_inventory_();
-              } else {
-                // reset feild since tag won't respond until it is
-                this->turn_field_off_();
-                this->last_random_[0] = 0;
-              }
-              break;
-            default:
-              break;
-          }
-          this->rx_buff_.clear();
-          transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
-        } else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
-          uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
-          if (length & 0x10) {
-            ESP_LOGE(TAG, "Error FIFO overflow detected");
-          }
-          if (length & 0x40) {
-            this->read_rx_bytes(length & 0x0f);
-          }
-        } else if (transfer_status_ != TRANSFER_STATUS::NO_TRANSACTIONS) {
-          if (tag_uid_[0]) {
-            tag_uid_[0] = 0;
-          }
-          if (transfer_status_ == TRANSFER_STATUS::WAIT_PASSWORD) {
-            // reset field so tag will respond again
-            this->turn_field_off_();
-          }
-          last_random_[0] = 0;
-          ESP_LOGD(TAG, "No response received");
-          transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
-        }
-      }
-    }
-    if (tag_uid_[0]) {
-    } else {
-      if (!is_searching_) {
-        // offset checks by a bit
-        if (this->check_slix_ && passwords_.size() > 0) {
-          this->set_timeout(100, [this]() {
-            this->set_interval(search_slix_, 1000, [this]() { this->ISO15693_get_random_slix_(); });
-          });
-        }
-        this->set_interval(search_standard_, 1000, [this]() { this->ISO15693_send_single_slot_inventory_(); });
-        is_searching_ = true;
-      }
-    }
-  } else {
-    this->turn_field_on_();
-  }
-}
+void TRF7962A::loop() {}
 
 void TRF7962A::send_command(TRF7962A_CMD command) {
   this->enable();
@@ -279,6 +136,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_INVENTORY;
   ESP_LOGD(TAG, "send inventory request");
+  this->wait_for_rx();
 }
 
 void TRF7962A::ISO15693_get_random_slix_() {
@@ -298,6 +156,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_RANDOM;
   ESP_LOGD(TAG, "send get random number to SLIXL");
+  this->wait_for_rx();
 }
 
 void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password) {
@@ -317,9 +176,156 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_PASSWORD;
   ESP_LOGD(TAG, "Sending Password");
+  this->wait_for_rx();
 }
 
 void TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData) {}
+
+void TRF7962A::wait_for_rx() {
+  this->set_retry("rx_wait", 1, 10, [this](const uint8_t attempts) {
+    RetryResult result = RetryResult::RETRY;
+    if (irq_pin_->digital_read()) {
+      ESP_LOGVV(TAG, "IRQ Pin high");
+      this->enable();
+      this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
+      this->set_mode(read_mode_);  // switch to reading mode
+      uint8_t irq = this->read_byte();
+      this->read_byte();            // dummy read needed to clear irq
+      this->set_mode(write_mode_);  // set back to write mode
+      this->disable();
+      if (irq) {
+        ESP_LOGD(TAG, "IRQ received %0x", irq);
+        if (irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
+          uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
+          if (length & 0x10) {
+            ESP_LOGE(TAG, "Error FIFO overflow detected");
+          }
+          this->read_rx_bytes(length & 0x0f);
+          uint8_t flags = this->rx_buff_.front();
+          this->rx_buff_.pop_front();
+          switch (transfer_status_) {
+            case WAIT_RANDOM:
+              process_random();
+              break;
+            case WAIT_INVENTORY:
+              process_uid();
+              break;
+            case WAIT_PASSWORD:
+              if (!flags) {
+                // no errors so password is successful
+                ESP_LOGD(TAG, "Password successful");
+                this->ISO15693_send_single_slot_inventory_();
+              } else {
+                // reset feild since tag won't respond until it is
+                this->turn_field_off_();
+                this->last_random_[0] = 0;
+                this->set_timeout(50, [this]() {
+                  this->turn_field_on_();
+                  this->set_timeout(50, [this]() { this->search_tag(); });
+                });
+              }
+              break;
+            default:
+              break;
+          }
+          this->rx_buff_.clear();
+          transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
+          result = RetryResult::DONE;
+        } else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
+          uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
+          if (length & 0x10) {
+            ESP_LOGE(TAG, "Error FIFO overflow detected");
+          }
+          if (length & 0x40) {
+            this->read_rx_bytes(length & 0x0f);
+          }
+        }
+      }
+    }
+    if (attempts == 0 && result == RetryResult::RETRY) {
+      ESP_LOGD(TAG, "no response");
+      transfer_status_ = NO_TRANSACTIONS;
+      if (tag_uid_[0]) {
+        tag_uid_[0] = 0;
+        // TODO: trigger tag removed
+        is_searching_ = true;
+      }
+      if (last_random_[0]) {
+        last_random_[0] = 0;
+      }
+      c_password_ = passwords_.cbegin();
+      search_tag();
+    }
+    return result;
+  });
+}
+
+void TRF7962A::process_random() {
+  if (this->rx_buff_.size() != 2) {
+    ESP_LOGE(TAG, "only two items should be in the rx buffer but there are actually %0d items in buffer",
+             this->rx_buff_.size());
+  } else {
+    this->last_random_[1] = this->rx_buff_[0];
+    this->last_random_[0] = this->rx_buff_[1];
+    ESP_LOGD(TAG, "New random received %x%x", this->last_random_[1], this->last_random_[0]);
+    if (!tag_uid_[0]) {
+      if (this->passwords_.empty()) {
+      } else {
+        if (c_password_ != passwords_.end()) {
+          this->ISO15693_unlock_privacy_slix_(*c_password_++);
+        } else {
+          ESP_LOGE(TAG, "No provided passwords worked");
+          search_tag();
+        }
+      }
+    }
+  }
+}
+
+void TRF7962A::process_uid() {
+  if (this->rx_buff_.size() != 9) {
+    ESP_LOGE(TAG, "only 9 items should be in the rx buffer but there are actually %0d items in buffer",
+             this->rx_buff_.size());
+  } else {
+    bool update = false;
+    this->rx_buff_.pop_front();  // get rid of DSFID
+    if (this->tag_uid_[0]) {
+      for (uint8_t i = 0; i < 8; i++) {
+        if (this->tag_uid_[i] != this->rx_buff_[7 - i]) {
+          // TODO: trigger tag removed events
+          update = true;
+          break;
+        }
+      }
+    } else {
+      this->is_searching_ = false;
+      update = true;
+      search_tag();
+    }
+    if (update) {
+      for (uint8_t i = 0; i < 8; i++) {
+        this->tag_uid_[i] = this->rx_buff_[i];
+      }
+      ESP_LOGD(TAG, "Tag UID: %02X%02X%02X%02X%02X%02X%02X%02X", this->tag_uid_[7], this->tag_uid_[6],
+               this->tag_uid_[5], this->tag_uid_[4], this->tag_uid_[3], this->tag_uid_[2], this->tag_uid_[1],
+               this->tag_uid_[0]);
+    }
+  }
+}
+
+void TRF7962A::search_tag() {
+  static bool toggle_search_type = true;
+  if (is_searching_) {
+    if (toggle_search_type) {
+      set_timeout(1000, [this]() { this->ISO15693_send_single_slot_inventory_(); });
+    } else {
+      set_timeout(1000, [this]() { this->ISO15693_get_random_slix_(); });
+    }
+    toggle_search_type = !toggle_search_type;
+  } else {
+    set_timeout(1000, [this]() { this->ISO15693_send_single_slot_inventory_(); });
+  }
+}
 
 void TRF7962A::add_password(uint32_t password) {
   std::array<uint8_t, 4> password_bytes = {(password >> 0) & 0xFF, (password >> 8) & 0xFF, (password >> 16) & 0xFF,

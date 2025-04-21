@@ -151,7 +151,10 @@ class TRF7962A : public Component,
   void ISO15693_get_random_slix_();
   void ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password);
   void ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData);
-
+  void search_tag();
+  void wait_for_rx();
+  void process_random();
+  void process_uid();
   std::vector<std::array<uint8_t, 4>> passwords_;  //= { 0x7FFD6E5B, 0x0F0F0F0F, 0x00000000 };
   std::vector<std::array<uint8_t, 4>>::const_iterator c_password_;
   GPIOPin *irq_pin_{nullptr};
@@ -172,9 +175,6 @@ class TRF7962A : public Component,
   bool check_slix_ = false;
   bool check_standard_ = false;
   bool is_searching_ = false;
-  const std::string search_slix_ = "search_slix";
-  const std::string search_standard_ = "search_standard";
-  const std::string try_password_ = "try_password";
 };
 
 }  // namespace trf7962a
