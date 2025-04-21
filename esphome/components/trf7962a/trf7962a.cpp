@@ -26,10 +26,8 @@ void TRF7962A::setup() {
     this->write_register(TRF7962A_REG::MOD_SYS_CLK_CTRL, 0b00100001);
     this->write_register(TRF7962A_REG::TX_PULSE_LEN, 0x80);
     this->write_register(TRF7962A_REG::CHIP_STAT, 0b00100001);
-    this->set_timeout(75, [this]() {
-      this->turn_field_on_();
-      this->set_timeout(100, [this]() { this->search_tag(); });
-    });
+    this->turn_field_on_();
+    this->search_tag();
   });
   this->tag_uid_[0] = 0;
   this->c_password_ = passwords_.cbegin();
@@ -233,7 +231,7 @@ void TRF7962A::wait_for_rx() {
             this->last_random_[0] = 0;
             this->set_timeout(50, [this]() {
               this->turn_field_on_();
-              this->set_timeout(50, [this]() { this->search_tag(); });
+              this->search_tag();
             });
           }
           break;
@@ -266,12 +264,15 @@ void TRF7962A::process_random() {
   if (this->rx_buff_.size() != 2) {
     ESP_LOGE(TAG, "only two items should be in the rx buffer but there are actually %0d items in buffer",
              this->rx_buff_.size());
+    search_tag();
   } else {
     this->last_random_[1] = this->rx_buff_[0];
     this->last_random_[0] = this->rx_buff_[1];
     ESP_LOGD(TAG, "New random received %x%x", this->last_random_[1], this->last_random_[0]);
     if (!tag_uid_[0]) {
       if (this->passwords_.empty()) {
+        ESP_LOGE(TAG, "no passwords provided");
+        search_tag();
       } else {
         if (c_password_ != passwords_.end()) {
           this->ISO15693_unlock_privacy_slix_(*c_password_++);
@@ -280,6 +281,9 @@ void TRF7962A::process_random() {
           search_tag();
         }
       }
+    } else {
+      ESP_LOGE(TAG, "UID already found");
+      search_tag();
     }
   }
 }
@@ -302,7 +306,6 @@ void TRF7962A::process_uid() {
     } else {
       this->is_searching_ = false;
       update = true;
-      search_tag();
     }
     if (update) {
       for (uint8_t i = 0; i < 8; i++) {
@@ -313,6 +316,7 @@ void TRF7962A::process_uid() {
                this->tag_uid_[0]);
     }
   }
+  search_tag();
 }
 
 void TRF7962A::search_tag() {
