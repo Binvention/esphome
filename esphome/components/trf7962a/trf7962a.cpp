@@ -26,11 +26,13 @@ void TRF7962A::setup() {
     this->write_register(TRF7962A_REG::MOD_SYS_CLK_CTRL, 0b00100001);
     this->write_register(TRF7962A_REG::TX_PULSE_LEN, 0x80);
     this->write_register(TRF7962A_REG::CHIP_STAT, 0b00100001);
+    this->set_timeout(75, [this]() {
+      this->turn_field_on_();
+      this->set_timeout(100, [this]() { this->search_tag(); });
+    });
   });
   this->tag_uid_[0] = 0;
   this->c_password_ = passwords_.cbegin();
-  this->set_timeout(75, [this]() { this->turn_field_on_(); });
-  this->set_timeout(100, [this]() { this->search_tag(); });
 }
 
 void TRF7962A::dump_config() {
@@ -205,7 +207,6 @@ void TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData) 
 void TRF7962A::wait_for_rx() {
   this->set_retry("rx_wait", 50, 10, [this](const uint8_t attempts) {
     RetryResult result = RetryResult::RETRY;
-    ESP_LOGD(TAG, "Waiting for RX");
     if (last_irq_ & TRF7962A_IRQ_STAT::RX_COMPLETE) {
       uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
       if (length & 0x10) {
