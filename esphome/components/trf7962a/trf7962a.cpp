@@ -29,6 +29,7 @@ void TRF7962A::setup() {
   });
   this->tag_uid_[0] = 0;
   this->c_password_ = passwords_.cbegin();
+  this->set_timeout(75, [this]() { this->turn_field_on_(); });
   this->set_timeout(100, [this]() { this->search_tag(); });
 }
 
@@ -248,11 +249,11 @@ void TRF7962A::wait_for_rx() {
       if (tag_uid_[0]) {
         tag_uid_[0] = 0;
         // TODO: trigger tag removed
-        is_searching_ = true;
       }
       if (last_random_[0]) {
         last_random_[0] = 0;
       }
+      is_searching_ = true;
       c_password_ = passwords_.cbegin();
       search_tag();
     }

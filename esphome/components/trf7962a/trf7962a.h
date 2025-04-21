@@ -174,7 +174,7 @@ class TRF7962A : public Component,
   const spi::SPIMode write_mode_ = spi::SPIMode::MODE0;
   bool check_slix_ = false;
   bool check_standard_ = false;
-  bool is_searching_ = false;
+  bool is_searching_ = true;
 };
 
 }  // namespace trf7962a
