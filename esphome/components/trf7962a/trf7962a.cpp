@@ -183,11 +183,11 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
 void TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData) {}
 
 void TRF7962A::wait_for_rx() {
-  this->set_retry("rx_wait", 15, 10, [this](const uint8_t attempts) {
+  this->set_retry("rx_wait", 50, 10, [this](const uint8_t attempts) {
     RetryResult result = RetryResult::RETRY;
     ESP_LOGD(TAG, "Waiting for RX");
     if (irq_pin_->digital_read()) {
-      ESP_LOGD(TAG, "IRQ Pin high");
+      ESP_LOGVV(TAG, "IRQ Pin high");
       this->enable();
       this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
       this->set_mode(read_mode_);  // switch to reading mode
