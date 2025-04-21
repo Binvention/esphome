@@ -270,18 +270,13 @@ void TRF7962A::wait_for_rx() {
       }
       is_searching_ = true;
       c_password_ = passwords_.cbegin();
-      if (this->transfer_status_ == TRANSFER_STATUS::WAIT_PASSWORD) {
-        this->transfer_status_ = NO_TRANSACTIONS;
-        this->turn_field_off_();
-        this->last_random_[0] = 0;
-        this->set_timeout(50, [this]() {
-          this->turn_field_on_();
-          search_tag();
-        });
-      } else {
-        this->transfer_status_ = NO_TRANSACTIONS;
+      this->transfer_status_ = NO_TRANSACTIONS;
+      this->turn_field_off_();
+      this->last_random_[0] = 0;
+      this->set_timeout(50, [this]() {
+        this->turn_field_on_();
         search_tag();
-      }
+      });
     }
     return result;
   });
