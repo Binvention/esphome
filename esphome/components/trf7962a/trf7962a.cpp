@@ -246,7 +246,21 @@ void TRF7962A::wait_for_rx() {
       result = RetryResult::DONE;
     }
     if (attempts == 0 && result == RetryResult::RETRY) {
-      ESP_LOGD(TAG, "no response");
+      std::string transfer_type = "";
+      switch (transfer_status_) {
+        case WAIT_RANDOM:
+          transfer_type = "Random";
+          break;
+        case WAIT_INVENTORY:
+          transfer_type = "Inventory";
+          break;
+        case WAIT_PASSWORD:
+          transfer_type = "password";
+          break;
+        default:
+          break;
+      }
+      ESP_LOGD(TAG, "no response to %s", transfer_type);
       if (tag_uid_[0]) {
         tag_uid_[0] = 0;
         // TODO: trigger tag removed
@@ -256,7 +270,7 @@ void TRF7962A::wait_for_rx() {
       }
       is_searching_ = true;
       c_password_ = passwords_.cbegin();
-      if (transfer_status_ == WAIT_PASSWORD) {
+      if (transfer_status_ == TRANSFER_STATUS::WAIT_PASSWORD) {
         transfer_status_ = NO_TRANSACTIONS;
         this->turn_field_off_();
         this->last_random_[0] = 0;
