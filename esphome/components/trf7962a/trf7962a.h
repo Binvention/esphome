@@ -175,6 +175,7 @@ class TRF7962A : public Component,
   bool check_slix_ = false;
   bool check_standard_ = false;
   bool is_searching_ = true;
+  uint8_t last_irq_;
 };
 
 }  // namespace trf7962a

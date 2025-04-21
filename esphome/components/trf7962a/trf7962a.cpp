@@ -64,7 +64,27 @@ void TRF7962A::dump_registers() {
   ESP_LOGD(TAG, "  TX_LEN_B2: 0x%02X", this->read_register(TX_LEN_B2));                // TX Length Byte 2
 }
 
-void TRF7962A::loop() {}
+void TRF7962A::loop() {
+  if (irq_pin_->digital_read()) {
+    this->enable();
+    this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
+    this->set_mode(read_mode_);  // switch to reading mode
+    this->last_irq_ = this->read_byte();
+    this->read_byte();            // dummy read needed to clear irq
+    this->set_mode(write_mode_);  // set back to write mode
+    this->disable();
+    ESP_LOGD(TAG, "IRQ received %0x", this->last_irq_);
+    if (last_irq_ & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
+      uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
+      if (length & 0x10) {
+        ESP_LOGE(TAG, "Error FIFO overflow detected");
+      }
+      if (length & 0x40) {
+        this->read_rx_bytes(length & 0x0f);
+      }
+    }
+  }
+}
 
 void TRF7962A::send_command(TRF7962A_CMD command) {
   this->enable();
@@ -186,63 +206,42 @@ void TRF7962A::wait_for_rx() {
   this->set_retry("rx_wait", 50, 10, [this](const uint8_t attempts) {
     RetryResult result = RetryResult::RETRY;
     ESP_LOGD(TAG, "Waiting for RX");
-    if (irq_pin_->digital_read()) {
-      ESP_LOGVV(TAG, "IRQ Pin high");
-      this->enable();
-      this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
-      this->set_mode(read_mode_);  // switch to reading mode
-      uint8_t irq = this->read_byte();
-      this->read_byte();            // dummy read needed to clear irq
-      this->set_mode(write_mode_);  // set back to write mode
-      this->disable();
-      if (irq) {
-        ESP_LOGD(TAG, "IRQ received %0x", irq);
-        if (irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
-          uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
-          if (length & 0x10) {
-            ESP_LOGE(TAG, "Error FIFO overflow detected");
-          }
-          this->read_rx_bytes(length & 0x0f);
-          uint8_t flags = this->rx_buff_.front();
-          this->rx_buff_.pop_front();
-          switch (transfer_status_) {
-            case WAIT_RANDOM:
-              process_random();
-              break;
-            case WAIT_INVENTORY:
-              process_uid();
-              break;
-            case WAIT_PASSWORD:
-              if (!flags) {
-                // no errors so password is successful
-                ESP_LOGD(TAG, "Password successful");
-                this->ISO15693_send_single_slot_inventory_();
-              } else {
-                // reset feild since tag won't respond until it is
-                this->turn_field_off_();
-                this->last_random_[0] = 0;
-                this->set_timeout(50, [this]() {
-                  this->turn_field_on_();
-                  this->set_timeout(50, [this]() { this->search_tag(); });
-                });
-              }
-              break;
-            default:
-              break;
-          }
-          this->rx_buff_.clear();
-          transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
-          result = RetryResult::DONE;
-        } else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
-          uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
-          if (length & 0x10) {
-            ESP_LOGE(TAG, "Error FIFO overflow detected");
-          }
-          if (length & 0x40) {
-            this->read_rx_bytes(length & 0x0f);
-          }
-        }
+    if (last_irq_ & TRF7962A_IRQ_STAT::RX_COMPLETE) {
+      uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
+      if (length & 0x10) {
+        ESP_LOGE(TAG, "Error FIFO overflow detected");
       }
+      this->read_rx_bytes(length & 0x0f);
+      uint8_t flags = this->rx_buff_.front();
+      this->rx_buff_.pop_front();
+      switch (transfer_status_) {
+        case WAIT_RANDOM:
+          process_random();
+          break;
+        case WAIT_INVENTORY:
+          process_uid();
+          break;
+        case WAIT_PASSWORD:
+          if (!flags) {
+            // no errors so password is successful
+            ESP_LOGD(TAG, "Password successful");
+            this->ISO15693_send_single_slot_inventory_();
+          } else {
+            // reset feild since tag won't respond until it is
+            this->turn_field_off_();
+            this->last_random_[0] = 0;
+            this->set_timeout(50, [this]() {
+              this->turn_field_on_();
+              this->set_timeout(50, [this]() { this->search_tag(); });
+            });
+          }
+          break;
+        default:
+          break;
+      }
+      this->rx_buff_.clear();
+      transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
+      result = RetryResult::DONE;
     }
     if (attempts == 0 && result == RetryResult::RETRY) {
       ESP_LOGD(TAG, "no response");
