@@ -240,6 +240,7 @@ void TRF7962A::wait_for_rx() {
           }
           break;
         default:
+          ESP_LOGE(TAG, "ERROR invalid transaction status");
           break;
       }
       this->rx_buff_.clear();
@@ -258,6 +259,7 @@ void TRF7962A::wait_for_rx() {
           ESP_LOGD(TAG, "no response to password");
           break;
         default:
+          ESP_LOGE(TAG, "ERROR no transaction was started");
           break;
       }
       if (tag_uid_[0]) {
