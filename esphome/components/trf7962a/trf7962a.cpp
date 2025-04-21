@@ -216,7 +216,7 @@ void TRF7962A::wait_for_rx() {
     if (last_irq_ & TRF7962A_IRQ_STAT::RX_COMPLETE) {
       uint8_t flags = this->rx_buff_.front();
       this->rx_buff_.pop_front();
-      switch (transfer_status_) {
+      switch (this->transfer_status_) {
         case WAIT_RANDOM:
           process_random();
           break;
@@ -244,11 +244,10 @@ void TRF7962A::wait_for_rx() {
           break;
       }
       this->rx_buff_.clear();
-      transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
+      this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
       result = RetryResult::DONE;
-    }
-    if (attempts == 0 && result == RetryResult::RETRY) {
-      switch (transfer_status_) {
+    } else if (attempts == 0) {
+      switch (this->transfer_status_) {
         case WAIT_RANDOM:
           ESP_LOGD(TAG, "no response to random");
           break;
@@ -271,8 +270,8 @@ void TRF7962A::wait_for_rx() {
       }
       is_searching_ = true;
       c_password_ = passwords_.cbegin();
-      if (transfer_status_ == TRANSFER_STATUS::WAIT_PASSWORD) {
-        transfer_status_ = NO_TRANSACTIONS;
+      if (this->transfer_status_ == TRANSFER_STATUS::WAIT_PASSWORD) {
+        this->transfer_status_ = NO_TRANSACTIONS;
         this->turn_field_off_();
         this->last_random_[0] = 0;
         this->set_timeout(50, [this]() {
@@ -280,7 +279,7 @@ void TRF7962A::wait_for_rx() {
           search_tag();
         });
       } else {
-        transfer_status_ = NO_TRANSACTIONS;
+        this->transfer_status_ = NO_TRANSACTIONS;
         search_tag();
       }
     }
