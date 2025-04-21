@@ -226,9 +226,10 @@ void TRF7962A::wait_for_rx() {
         case WAIT_PASSWORD:
           if (!flags) {
             // no errors so password is successful
-            ESP_LOGD(TAG, "Password successful");
+            ESP_LOGD(TAG, "Password successful!");
             this->ISO15693_send_single_slot_inventory_();
           } else {
+            ESP_LOGD(TAG, "Password failed");
             // reset feild since tag won't respond until it is
             this->turn_field_off_();
             this->last_random_[0] = 0;
