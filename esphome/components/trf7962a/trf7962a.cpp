@@ -316,6 +316,9 @@ void TRF7962A::process_uid() {
 
 void TRF7962A::search_tag() {
   static bool toggle_search_type = true;
+  if (!this->field_on_) {
+    this->turn_field_on_();
+  }
   if (is_searching_) {
     if (toggle_search_type) {
       set_timeout(1000, [this]() { this->ISO15693_send_single_slot_inventory_(); });
