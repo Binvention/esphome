@@ -76,7 +76,13 @@ void TRF7962A::loop() {
     this->set_mode(write_mode_);  // set back to write mode
     this->disable();
     ESP_LOGD(TAG, "IRQ received %0x", this->last_irq_);
-    if (last_irq_ & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
+    if (last_irq_ & TRF7962A_IRQ_STAT::RX_COMPLETE) {
+      uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
+      if (length & 0x10) {
+        ESP_LOGE(TAG, "Error FIFO overflow detected");
+      }
+      this->read_rx_bytes(length & 0x0f);
+    } else if (last_irq_ & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
       uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
       if (length & 0x10) {
         ESP_LOGE(TAG, "Error FIFO overflow detected");
@@ -208,11 +214,6 @@ void TRF7962A::wait_for_rx() {
   this->set_retry("rx_wait", 50, 10, [this](const uint8_t attempts) {
     RetryResult result = RetryResult::RETRY;
     if (last_irq_ & TRF7962A_IRQ_STAT::RX_COMPLETE) {
-      uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
-      if (length & 0x10) {
-        ESP_LOGE(TAG, "Error FIFO overflow detected");
-      }
-      this->read_rx_bytes(length & 0x0f);
       uint8_t flags = this->rx_buff_.front();
       this->rx_buff_.pop_front();
       switch (transfer_status_) {
@@ -294,29 +295,27 @@ void TRF7962A::process_uid() {
   if (this->rx_buff_.size() != 9) {
     ESP_LOGE(TAG, "only 9 items should be in the rx buffer but there are actually %0d items in buffer",
              this->rx_buff_.size());
+  }
+  bool update = false;
+  this->rx_buff_.pop_front();  // get rid of DSFID
+  if (this->tag_uid_[0]) {
+    for (uint8_t i = 0; i < 8; i++) {
+      if (this->tag_uid_[i] != this->rx_buff_[7 - i]) {
+        // TODO: trigger tag removed events
+        update = true;
+        break;
+      }
+    }
   } else {
-    bool update = false;
-    this->rx_buff_.pop_front();  // get rid of DSFID
-    if (this->tag_uid_[0]) {
-      for (uint8_t i = 0; i < 8; i++) {
-        if (this->tag_uid_[i] != this->rx_buff_[7 - i]) {
-          // TODO: trigger tag removed events
-          update = true;
-          break;
-        }
-      }
-    } else {
-      this->is_searching_ = false;
-      update = true;
+    this->is_searching_ = false;
+    update = true;
+  }
+  if (update) {
+    for (uint8_t i = 0; i < 8; i++) {
+      this->tag_uid_[i] = this->rx_buff_[i];
     }
-    if (update) {
-      for (uint8_t i = 0; i < 8; i++) {
-        this->tag_uid_[i] = this->rx_buff_[i];
-      }
-      ESP_LOGD(TAG, "Tag UID: %02X%02X%02X%02X%02X%02X%02X%02X", this->tag_uid_[7], this->tag_uid_[6],
-               this->tag_uid_[5], this->tag_uid_[4], this->tag_uid_[3], this->tag_uid_[2], this->tag_uid_[1],
-               this->tag_uid_[0]);
-    }
+    ESP_LOGD(TAG, "Tag UID: %02X%02X%02X%02X%02X%02X%02X%02X", this->tag_uid_[7], this->tag_uid_[6], this->tag_uid_[5],
+             this->tag_uid_[4], this->tag_uid_[3], this->tag_uid_[2], this->tag_uid_[1], this->tag_uid_[0]);
   }
   search_tag();
 }
