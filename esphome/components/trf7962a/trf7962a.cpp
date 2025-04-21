@@ -26,8 +26,10 @@ void TRF7962A::setup() {
     this->write_register(TRF7962A_REG::MOD_SYS_CLK_CTRL, 0b00100001);
     this->write_register(TRF7962A_REG::TX_PULSE_LEN, 0x80);
     this->write_register(TRF7962A_REG::CHIP_STAT, 0b00100001);
-    this->turn_field_on_();
-    this->search_tag();
+    this->set_timeout(75, [this]() {
+      this->turn_field_on_();
+      this->search_tag();
+    });
   });
   this->tag_uid_[0] = 0;
   this->c_password_ = passwords_.cbegin();
