@@ -163,7 +163,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->write_byte(0x01);  // inventory
   this->write_byte(0x00);  // mask length = 0 and no afi
   this->disable();
-  this->this->transfer_status_ = TRANSFER_STATUS::WAIT_INVENTORY;
+  this->transfer_status_ = TRANSFER_STATUS::WAIT_INVENTORY;
   ESP_LOGV(TAG, "send inventory request");
   this->wait_for_rx();
 }
