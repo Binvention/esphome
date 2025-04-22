@@ -17,7 +17,7 @@ DEPENDENCIES = ["spi"]
 trf7962a_ns = cg.esphome_ns.namespace("trf7962a")
 TRF7962A = trf7962a_ns.class_("TRF7962A", cg.Component, spi.SPIDevice)
 TRF7962ATrigger = trf7962a_ns.class_(
-    "TRF7962ATrigger", automation.Trigger.template(cg.std_string)
+    "TRF7962ATrigger", automation.Trigger.template(cg.uint64)
 )
 
 ISO15693_tag_types = trf7962a_ns.enum("TAG_TYPES")
