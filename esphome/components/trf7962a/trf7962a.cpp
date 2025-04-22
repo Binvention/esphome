@@ -163,7 +163,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->write_byte(0x01);  // inventory
   this->write_byte(0x00);  // mask length = 0 and no afi
   this->disable();
-  this->transfer_status_ = TRANSFER_STATUS::WAIT_INVENTORY;
+  this->this->transfer_status_ = TRANSFER_STATUS::WAIT_INVENTORY;
   ESP_LOGV(TAG, "send inventory request");
   this->wait_for_rx();
 }
@@ -308,33 +308,37 @@ void TRF7962A::process_uid() {
   if (this->rx_buff_.size() != 9) {
     ESP_LOGE(TAG, "only 9 items should be in the rx buffer but there are actually %0d items in buffer",
              this->rx_buff_.size());
-  }
-  bool update = false;
-  this->rx_buff_.pop_front();  // get rid of DSFID
-  if (this->tag_uid_[0]) {
-    for (uint8_t i = 0; i < 8; i++) {
-      if (this->tag_uid_[i] != this->rx_buff_[i]) {
-        for (auto *trigger : triggers_ontagremoved_) {
-          trigger->trigger(0);
-        }
-        update = true;
-        break;
-      }
+    for (auto item : rx_buff_) {
+      ESP_LOGD(TAG, "Data %02x", item);
     }
   } else {
-    this->is_searching_ = false;
-    update = true;
-  }
-  if (update) {
-    uint64_t result = 0;
-    for (uint8_t i = 0; i < 8; i++) {
-      this->tag_uid_[i] = this->rx_buff_[i];
-      result |= tag_uid_[i] << (i * 8);
+    bool update = false;
+    this->rx_buff_.pop_front();  // get rid of DSFID
+    if (this->tag_uid_[0]) {
+      for (uint8_t i = 0; i < 8; i++) {
+        if (this->tag_uid_[i] != this->rx_buff_[i]) {
+          for (auto *trigger : triggers_ontagremoved_) {
+            trigger->trigger(0);
+          }
+          update = true;
+          break;
+        }
+      }
+    } else {
+      this->is_searching_ = false;
+      update = true;
     }
-    for (auto *trigger : triggers_ontag_) {
-      trigger->trigger(result);
+    if (update) {
+      uint64_t result = 0;
+      for (uint8_t i = 0; i < 8; i++) {
+        this->tag_uid_[i] = this->rx_buff_[i];
+        result |= tag_uid_[i] << (i * 8);
+      }
+      for (auto *trigger : triggers_ontag_) {
+        trigger->trigger(result);
+      }
+      ESP_LOGD(TAG, "Tag UID: %x", result);
     }
-    ESP_LOGD(TAG, "Tag UID: %x", result);
   }
   search_tag();
 }
