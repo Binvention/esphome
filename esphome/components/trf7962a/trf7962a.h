@@ -10,11 +10,7 @@
 namespace esphome {
 namespace trf7962a {
 
-class TRF7962ATrigger : public Trigger<std::string> {
- public:
-  void process(uint64_t uid = 0);
-};
-
+typedef Trigger<uint64_t> TRF7962ATrigger;
 enum ISO15693_RESULT : uint8_t {
   RESULT_NO_RESPONSE = 0x00,
   VALID_RESPONSE = 0x01,

@@ -250,7 +250,7 @@ void TRF7962A::wait_for_rx() {
       if (tag_uid_[0]) {
         tag_uid_[0] = 0;
         for (auto *trigger : triggers_ontagremoved_) {
-          trigger->process();
+          trigger->trigger(0);
         }
       }
       if (last_random_[0]) {
@@ -309,7 +309,7 @@ void TRF7962A::process_uid() {
     for (uint8_t i = 0; i < 8; i++) {
       if (this->tag_uid_[i] != this->rx_buff_[i]) {
         for (auto *trigger : triggers_ontagremoved_) {
-          trigger->process();
+          trigger->trigger(0);
         }
         update = true;
         break;
@@ -326,7 +326,7 @@ void TRF7962A::process_uid() {
       result |= tag_uid_[i] << (i * 8);
     }
     for (auto *trigger : triggers_ontag_) {
-      trigger->process(result);
+      trigger->trigger(result);
     }
     ESP_LOGD(TAG, "Tag UID: %x", result);
   }
