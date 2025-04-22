@@ -10,7 +10,7 @@
 namespace esphome {
 namespace trf7962a {
 
-typedef Trigger<uint64_t> TRF7962ATrigger;
+class TRF7962ATrigger : public Trigger<uint64_t> {};
 enum ISO15693_RESULT : uint8_t {
   RESULT_NO_RESPONSE = 0x00,
   VALID_RESPONSE = 0x01,
