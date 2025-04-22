@@ -76,9 +76,9 @@ async def to_code(config):
     for conf in config.get(CONF_ON_TAG, []):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
         cg.add(var.register_ontag_trigger(trigger))
-        await automation.build_automation(trigger, [(cg.std_string, "x")], conf)
+        await automation.build_automation(trigger, [(cg.uint64, "x")], conf)
 
     for conf in config.get(CONF_ON_TAG_REMOVED, []):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
         cg.add(var.register_ontagremoved_trigger(trigger))
-        await automation.build_automation(trigger, [(cg.std_string, "x")], conf)
+        await automation.build_automation(trigger, [(cg.uint64, "x")], conf)
