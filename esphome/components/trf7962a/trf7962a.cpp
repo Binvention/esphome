@@ -308,8 +308,10 @@ void TRF7962A::process_uid() {
   if (this->rx_buff_.size() != 9) {
     ESP_LOGE(TAG, "only 9 items should be in the rx buffer but there are actually %0d items in buffer",
              this->rx_buff_.size());
-    for (auto item : rx_buff_) {
-      ESP_LOGD(TAG, "Data %02x", item);
+    if (this->rx_buff_.size() > 0) {
+      for (auto item : rx_buff_) {
+        ESP_LOGD(TAG, "Data %02x", item);
+      }
     }
   } else {
     bool update = false;
