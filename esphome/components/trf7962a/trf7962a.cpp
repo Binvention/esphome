@@ -241,6 +241,12 @@ void TRF7962A::wait_for_rx() {
           break;
         default:
           ESP_LOGE(TAG, "ERROR invalid transaction status");
+          this->turn_field_off_();
+          this->last_random_[0] = 0;
+          this->set_timeout(50, [this]() {
+            this->turn_field_on_();
+            this->search_tag();
+          });
           break;
       }
       this->rx_buff_.clear();

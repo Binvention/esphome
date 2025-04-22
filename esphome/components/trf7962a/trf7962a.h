@@ -33,7 +33,12 @@ enum ISO15693_RESULT : uint8_t {
   READ_SINGLE_BLOCK_INVALID_RESPONSE = 0x42,
 };
 
-enum TRANSFER_STATUS { NO_TRANSACTIONS = 0x00, WAIT_RANDOM = 0x01, WAIT_INVENTORY = 0x02, WAIT_PASSWORD = 0x03 };
+enum TRANSFER_STATUS : uint8_t {
+  NO_TRANSACTIONS = 0x00,
+  WAIT_RANDOM = 0x01,
+  WAIT_INVENTORY = 0x02,
+  WAIT_PASSWORD = 0x03
+};
 // registers (defaults to write must set type to make it read/continuous)
 enum TRF7962A_REG : uint8_t {
   // main control registers
