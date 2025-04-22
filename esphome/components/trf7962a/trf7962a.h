@@ -12,7 +12,7 @@ namespace trf7962a {
 
 class TRF7962ATrigger : public Trigger<std::string> {
  public:
-  void process(std::vector<uint8_t> &data);
+  void process(uint64_t uid = 0);
 };
 
 enum ISO15693_RESULT : uint8_t {

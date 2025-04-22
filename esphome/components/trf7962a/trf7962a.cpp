@@ -75,7 +75,7 @@ void TRF7962A::loop() {
     this->read_byte();            // dummy read needed to clear irq
     this->set_mode(write_mode_);  // set back to write mode
     this->disable();
-    ESP_LOGD(TAG, "IRQ received %0x", this->last_irq_);
+    ESP_LOGV(TAG, "IRQ received %0x", this->last_irq_);
     if (last_irq_ & TRF7962A_IRQ_STAT::RX_COMPLETE) {
       uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
       if (length & 0x10) {
@@ -143,13 +143,13 @@ TRANSFER_STATUS TRF7962A::get_last_transfer_status() { return this->transfer_sta
 void TRF7962A::turn_field_off_() {
   this->write_register(TRF7962A_REG::CHIP_STAT, 0X01);
   this->field_on_ = false;
-  ESP_LOGD(TAG, "field off");
+  ESP_LOGVV(TAG, "field off");
 }
 
 void TRF7962A::turn_field_on_() {
   this->write_register(TRF7962A_REG::CHIP_STAT, 0X21);
   this->field_on_ = true;
-  ESP_LOGD(TAG, "field on");
+  ESP_LOGVV(TAG, "field on");
 }
 
 void TRF7962A::ISO15693_send_single_slot_inventory_() {
@@ -164,7 +164,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->write_byte(0x00);  // mask length = 0 and no afi
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_INVENTORY;
-  ESP_LOGD(TAG, "send inventory request");
+  ESP_LOGV(TAG, "send inventory request");
   this->wait_for_rx();
 }
 
@@ -184,7 +184,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
   }
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_RANDOM;
-  ESP_LOGD(TAG, "send get random number to SLIXL");
+  ESP_LOGV(TAG, "send get random number to SLIXL");
   this->wait_for_rx();
 }
 
@@ -204,7 +204,7 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
   }
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_PASSWORD;
-  ESP_LOGD(TAG, "Sending Password");
+  ESP_LOGV(TAG, "Sending Password");
   this->wait_for_rx();
 }
 
@@ -247,23 +247,11 @@ void TRF7962A::wait_for_rx() {
       this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
       result = RetryResult::DONE;
     } else if (attempts == 0) {
-      switch (this->transfer_status_) {
-        case WAIT_RANDOM:
-          ESP_LOGD(TAG, "no response to random");
-          break;
-        case WAIT_INVENTORY:
-          ESP_LOGD(TAG, "no response to inventory");
-          break;
-        case WAIT_PASSWORD:
-          ESP_LOGD(TAG, "no response to password");
-          break;
-        default:
-          ESP_LOGE(TAG, "ERROR no transaction was started");
-          break;
-      }
       if (tag_uid_[0]) {
         tag_uid_[0] = 0;
-        // TODO: trigger tag removed
+        for (auto trigger = triggers_ontagremoved_.cbegin(); trigger != triggers_ontagremoved_.cend(); trigger++) {
+          (*trigger)->process();
+        }
       }
       if (last_random_[0]) {
         last_random_[0] = 0;
@@ -319,8 +307,10 @@ void TRF7962A::process_uid() {
   this->rx_buff_.pop_front();  // get rid of DSFID
   if (this->tag_uid_[0]) {
     for (uint8_t i = 0; i < 8; i++) {
-      if (this->tag_uid_[i] != this->rx_buff_[7 - i]) {
-        // TODO: trigger tag removed events
+      if (this->tag_uid_[i] != this->rx_buff_[i]) {
+        for (auto trigger = triggers_ontagremoved_.cbegin(); trigger != triggers_ontagremoved_.cend(); trigger++) {
+          (*trigger)->process();
+        }
         update = true;
         break;
       }
@@ -330,8 +320,13 @@ void TRF7962A::process_uid() {
     update = true;
   }
   if (update) {
+    uint64_t result = 0;
     for (uint8_t i = 0; i < 8; i++) {
       this->tag_uid_[i] = this->rx_buff_[i];
+      result |= tag_uid_[i] << (i * 8);
+    }
+    for (auto trigger = triggers_ontag_.cbegin(); trigger != triggers_ontag_.cend(); trigger++) {
+      (*trigger)->process(result);
     }
     ESP_LOGD(TAG, "Tag UID: %02X%02X%02X%02X%02X%02X%02X%02X", this->tag_uid_[7], this->tag_uid_[6], this->tag_uid_[5],
              this->tag_uid_[4], this->tag_uid_[3], this->tag_uid_[2], this->tag_uid_[1], this->tag_uid_[0]);
