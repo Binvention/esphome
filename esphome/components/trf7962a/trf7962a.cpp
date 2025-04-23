@@ -154,6 +154,7 @@ void TRF7962A::turn_field_on_() {
 }
 
 void TRF7962A::ISO15693_send_single_slot_inventory_() {
+  this->rx_buff_.clear();
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -170,6 +171,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
 }
 
 void TRF7962A::ISO15693_get_random_slix_() {
+  this->rx_buff_.clear();
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -190,6 +192,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
 }
 
 void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password) {
+  this->rx_buff_.clear();
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
