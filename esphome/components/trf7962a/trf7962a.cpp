@@ -123,6 +123,7 @@ void TRF7962A::write_register(TRF7962A_REG reg, uint8_t value) {
 }
 
 void TRF7962A::read_rx_bytes(uint8_t length) {
+  int start = rx_buff_.size();
   this->enable();
   this->write_byte((uint8_t) TRF7962A_REG::FIFO_IO_REG | (uint8_t) TRF7962A_TRANS_TYPE::READ |
                    (uint8_t) TRF7962A_TRANS_TYPE::CONTINUOUS);
@@ -133,6 +134,12 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
   }
   this->set_mode(write_mode_);
   this->disable();
+  // check for and remove ghost bytes
+  if (this->rx_buff_.size() > (start + 3) && this->rx_buff_[start] == this->rx_buff_[start + 1] &&
+      this->rx_buff_[start + 1] == this->rx_buff_[start + 2]) {
+    this->rx_buff_.erase(this->rx_buff_.cbegin() + start);
+    this->rx_buff_.erase(this->rx_buff_.cbegin() + start);
+  }
 }
 
 bool TRF7962A::is_tag_active() { return false; }
