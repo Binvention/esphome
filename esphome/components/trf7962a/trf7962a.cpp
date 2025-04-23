@@ -337,10 +337,11 @@ void TRF7962A::process_uid() {
     }
     if (update) {
       uint64_t result = 0;
-      for (int i = 0; i < 8; i++) {
+      for (uint64_t i = 0; i < 8; i++) {
         this->tag_uid_[i] = this->rx_buff_[i];
-        result |= ((uint64_t) tag_uid_[i]) << (uint64_t) (i * 8);
-        ESP_LOGD(TAG, "Tag UID DEBUG: %016x %02x %d", result, tag_uid_[i], i);
+        uint64_t temp_uid_part = this->tag_uid_[i];
+        result |= temp_uid_part << (i * 8);
+        ESP_LOGD(TAG, "Tag UID DEBUG: %016x %02x %01d", result, tag_uid_[i], i);
       }
       for (auto *trigger : triggers_ontag_) {
         trigger->trigger(result);
