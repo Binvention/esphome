@@ -82,6 +82,7 @@ void TRF7962A::loop() {
         ESP_LOGE(TAG, "Error FIFO overflow detected");
       }
       this->read_rx_bytes(length & 0x0f);
+      this->send_command(RESET_FIFO);
     } else if (last_irq_ & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
       uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
       if (length & 0x10) {
@@ -128,7 +129,7 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
   this->set_mode(read_mode_);
   for (uint8_t i = 0; i <= length; i++) {
     this->rx_buff_.push_back(read_byte());
-    ESP_LOGVV(TAG, "byte received %02x", this->rx_buff_.back());
+    ESP_LOGD(TAG, "byte received %02x", this->rx_buff_.back());
   }
   this->set_mode(write_mode_);
   this->disable();
@@ -267,6 +268,7 @@ void TRF7962A::wait_for_rx() {
       this->transfer_status_ = NO_TRANSACTIONS;
       this->turn_field_off_();
       this->last_random_[0] = 0;
+      this->rx_buff_.clear();
       this->set_timeout(50, [this]() {
         this->turn_field_on_();
         search_tag();
@@ -310,7 +312,7 @@ void TRF7962A::process_uid() {
              this->rx_buff_.size());
     if (this->rx_buff_.size() > 0 && this->rx_buff_.size() < 20) {
       for (auto item : rx_buff_) {
-        ESP_LOGD(TAG, "Data %02x", item);
+        ESP_LOGVV(TAG, "Data %02x", item);
       }
     }
   } else {
