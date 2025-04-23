@@ -344,7 +344,7 @@ void TRF7962A::process_uid() {
       for (auto *trigger : triggers_ontag_) {
         trigger->trigger(result);
       }
-      ESP_LOGD(TAG, "Tag UID: %llx", result);
+      ESP_LOGVV(TAG, "Tag UID: %llx", result);
     }
   }
   search_tag();
