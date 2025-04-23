@@ -129,7 +129,7 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
   this->set_mode(read_mode_);
   for (uint8_t i = 0; i <= length; i++) {
     this->rx_buff_.push_back(read_byte());
-    ESP_LOGD(TAG, "byte received %02x", this->rx_buff_.back());
+    ESP_LOGVV(TAG, "byte received %02x", this->rx_buff_.back());
   }
   this->set_mode(write_mode_);
   this->disable();
@@ -155,6 +155,7 @@ void TRF7962A::turn_field_on_() {
 
 void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->rx_buff_.clear();
+  this->last_irq_ = 0;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -172,6 +173,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
 
 void TRF7962A::ISO15693_get_random_slix_() {
   this->rx_buff_.clear();
+  this->last_irq_ = 0;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -193,6 +195,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
 
 void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password) {
   this->rx_buff_.clear();
+  this->last_irq_ = 0;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -253,7 +256,6 @@ void TRF7962A::wait_for_rx() {
           });
           break;
       }
-      this->rx_buff_.clear();
       this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
       result = RetryResult::DONE;
     } else if (attempts == 0) {
@@ -344,7 +346,7 @@ void TRF7962A::process_uid() {
       for (auto *trigger : triggers_ontag_) {
         trigger->trigger(result);
       }
-      ESP_LOGVV(TAG, "Tag UID: %llx", result);
+      ESP_LOGD(TAG, "Tag UID: %llx", result);
     }
   }
   search_tag();
