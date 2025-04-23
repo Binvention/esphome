@@ -334,7 +334,7 @@ void TRF7962A::process_uid() {
     }
     if (update) {
       uint64_t result = 0;
-      for (uint8_t i = 0; i < 8; i++) {
+      for (int i = 0; i < 8; i++) {
         this->tag_uid_[i] = this->rx_buff_[i];
         result |= ((uint64_t) tag_uid_[i]) << (i * 8);
       }
