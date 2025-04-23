@@ -245,22 +245,14 @@ void TRF7962A::wait_for_rx() {
           } else {
             ESP_LOGD(TAG, "Password failed");
             // reset feild since tag won't respond until it is
-            this->turn_field_off_();
             this->last_random_[0] = 0;
-            this->set_timeout(50, [this]() {
-              this->turn_field_on_();
-              this->search_tag();
-            });
+            this->search_tag();
           }
           break;
         default:
           ESP_LOGE(TAG, "ERROR invalid transaction status");
-          this->turn_field_off_();
           this->last_random_[0] = 0;
-          this->set_timeout(50, [this]() {
-            this->turn_field_on_();
-            this->search_tag();
-          });
+          this->search_tag();
           break;
       }
       this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
@@ -278,13 +270,9 @@ void TRF7962A::wait_for_rx() {
       is_searching_ = true;
       c_password_ = passwords_.cbegin();
       this->transfer_status_ = NO_TRANSACTIONS;
-      this->turn_field_off_();
       this->last_random_[0] = 0;
       this->rx_buff_.clear();
-      this->set_timeout(50, [this]() {
-        this->turn_field_on_();
-        search_tag();
-      });
+      this->search_tag();
     }
     return result;
   });
@@ -360,20 +348,21 @@ void TRF7962A::process_uid() {
 }
 
 void TRF7962A::search_tag() {
-  static bool toggle_search_type = true;
-  if (!this->field_on_) {
+  this->turn_field_off_();
+  this->set_timeout(50, [this]() {
+    static bool toggle_search_type = true;
     this->turn_field_on_();
-  }
-  if (is_searching_) {
-    if (toggle_search_type) {
-      set_timeout(1000, [this]() { this->ISO15693_send_single_slot_inventory_(); });
+    if (is_searching_) {
+      if (toggle_search_type) {
+        set_timeout(1000, [this]() { this->ISO15693_send_single_slot_inventory_(); });
+      } else {
+        set_timeout(1000, [this]() { this->ISO15693_get_random_slix_(); });
+      }
+      toggle_search_type = !toggle_search_type;
     } else {
-      set_timeout(1000, [this]() { this->ISO15693_get_random_slix_(); });
+      set_timeout(1000, [this]() { this->ISO15693_send_single_slot_inventory_(); });
     }
-    toggle_search_type = !toggle_search_type;
-  } else {
-    set_timeout(1000, [this]() { this->ISO15693_send_single_slot_inventory_(); });
-  }
+  });
 }
 
 void TRF7962A::add_password(uint32_t password) {
