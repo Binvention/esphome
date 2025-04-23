@@ -129,7 +129,7 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
   this->set_mode(read_mode_);
   for (uint8_t i = 0; i <= length; i++) {
     this->rx_buff_.push_back(read_byte());
-    ESP_LOGVV(TAG, "byte received %02x", this->rx_buff_.back());
+    ESP_LOGD(TAG, "byte received %02x", this->rx_buff_.back());
   }
   this->set_mode(write_mode_);
   this->disable();
@@ -166,7 +166,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->write_byte(0x00);  // mask length = 0 and no afi
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_INVENTORY;
-  ESP_LOGV(TAG, "send inventory request");
+  ESP_LOGD(TAG, "send inventory request");
   this->wait_for_rx();
 }
 
@@ -187,7 +187,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
   }
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_RANDOM;
-  ESP_LOGV(TAG, "send get random number to SLIXL");
+  ESP_LOGD(TAG, "send get random number to SLIXL");
   this->wait_for_rx();
 }
 
@@ -208,7 +208,7 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
   }
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_PASSWORD;
-  ESP_LOGV(TAG, "Sending Password");
+  ESP_LOGD(TAG, "Sending Password");
   this->wait_for_rx();
 }
 
@@ -339,7 +339,8 @@ void TRF7962A::process_uid() {
       uint64_t result = 0;
       for (int i = 0; i < 8; i++) {
         this->tag_uid_[i] = this->rx_buff_[i];
-        result |= ((uint64_t) tag_uid_[i]) << (i * 8);
+        result |= ((uint64_t) tag_uid_[i]) << (uint64_t) (i * 8);
+        ESP_LOGD(TAG, "Tag UID DEBUG: %016x %02x %d", result, tag_uid_[i], i);
       }
       for (auto *trigger : triggers_ontag_) {
         trigger->trigger(result);
