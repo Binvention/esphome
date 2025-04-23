@@ -166,7 +166,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->write_byte(0x00);  // mask length = 0 and no afi
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_INVENTORY;
-  ESP_LOGD(TAG, "send inventory request");
+  ESP_LOGV(TAG, "send inventory request");
   this->wait_for_rx();
 }
 
@@ -187,7 +187,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
   }
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_RANDOM;
-  ESP_LOGD(TAG, "send get random number to SLIXL");
+  ESP_LOGV(TAG, "send get random number to SLIXL");
   this->wait_for_rx();
 }
 
@@ -208,7 +208,7 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
   }
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_PASSWORD;
-  ESP_LOGD(TAG, "Sending Password");
+  ESP_LOGV(TAG, "Sending Password");
   this->wait_for_rx();
 }
 
@@ -289,7 +289,7 @@ void TRF7962A::process_random() {
   } else {
     this->last_random_[1] = this->rx_buff_[0];
     this->last_random_[0] = this->rx_buff_[1];
-    ESP_LOGD(TAG, "New random received %x%x", this->last_random_[1], this->last_random_[0]);
+    ESP_LOGV(TAG, "New random received %x%x", this->last_random_[1], this->last_random_[0]);
     if (!tag_uid_[0]) {
       if (this->passwords_.empty()) {
         ESP_LOGE(TAG, "no passwords provided");
@@ -340,12 +340,11 @@ void TRF7962A::process_uid() {
       for (uint8_t offset = 0; offset < 8; offset++) {
         this->tag_uid_[offset] = this->rx_buff_[offset];
         result |= ((uint64_t) this->tag_uid_[offset]) << (offset * 8);
-        ESP_LOGD(TAG, "Tag UID DEBUG: %llx %02x %01d", result, this->tag_uid_[offset], offset);
       }
       for (auto *trigger : triggers_ontag_) {
         trigger->trigger(result);
       }
-      ESP_LOGD(TAG, "Tag UID: %016x", result);
+      ESP_LOGD(TAG, "Tag UID: %llx", result);
     }
   }
   search_tag();
