@@ -17,6 +17,7 @@ void TRF7962A::setup() {
   this->set_mode(write_mode_);  // default to writing mode
   this->irq_pin_->setup();
   this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
+  this->rx_ready_ = false;
   this->send_command(TRF7962A_CMD::SOFT_INIT);
   this->send_command(TRF7962A_CMD::IDLING);
   this->set_timeout(50, [this]() {
@@ -71,19 +72,20 @@ void TRF7962A::loop() {
     this->enable();
     this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
     this->set_mode(read_mode_);  // switch to reading mode
-    this->last_irq_ = this->read_byte();
+    uint8_t irq = this->read_byte();
     this->read_byte();            // dummy read needed to clear irq
     this->set_mode(write_mode_);  // set back to write mode
     this->disable();
-    ESP_LOGV(TAG, "IRQ received %0x", this->last_irq_);
-    if (last_irq_ & TRF7962A_IRQ_STAT::RX_COMPLETE) {
+    ESP_LOGV(TAG, "IRQ received %0x", irq);
+    if (irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
       uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
       if (length & 0x10) {
         ESP_LOGE(TAG, "Error FIFO overflow detected");
       }
       this->read_rx_bytes(length & 0x0f);
       this->send_command(RESET_FIFO);
-    } else if (last_irq_ & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
+      rx_ready_ = true;
+    } else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
       uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
       if (length & 0x10) {
         ESP_LOGE(TAG, "Error FIFO overflow detected");
@@ -163,7 +165,7 @@ void TRF7962A::turn_field_on_() {
 
 void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->rx_buff_.clear();
-  this->last_irq_ = 0;
+  this->rx_ready_ = false;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -181,7 +183,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
 
 void TRF7962A::ISO15693_get_random_slix_() {
   this->rx_buff_.clear();
-  this->last_irq_ = 0;
+  this->rx_ready_ = false;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -203,7 +205,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
 
 void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password) {
   this->rx_buff_.clear();
-  this->last_irq_ = 0;
+  this->rx_ready_ = false;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -228,7 +230,7 @@ void TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData) 
 void TRF7962A::wait_for_rx() {
   this->set_retry("rx_wait", 50, 10, [this](const uint8_t attempts) {
     RetryResult result = RetryResult::RETRY;
-    if (last_irq_ & TRF7962A_IRQ_STAT::RX_COMPLETE) {
+    if (this->rx_ready_) {
       uint8_t flags = this->rx_buff_.front();
       this->rx_buff_.pop_front();
       switch (this->transfer_status_) {
@@ -273,6 +275,7 @@ void TRF7962A::wait_for_rx() {
       this->transfer_status_ = NO_TRANSACTIONS;
       this->last_random_[0] = 0;
       this->rx_buff_.clear();
+      this->rx_ready_ = false;
       this->search_tag();
     }
     return result;

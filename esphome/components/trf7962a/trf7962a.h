@@ -166,6 +166,7 @@ class TRF7962A : public Component,
   uint8_t tag_uid_[8];
   // TAG_EVENT tag_status_;
   bool field_on_;
+  bool rx_ready_;
   uint8_t last_random_[2];
   TRANSFER_STATUS transfer_status_;
   std::deque<uint8_t> rx_buff_;
