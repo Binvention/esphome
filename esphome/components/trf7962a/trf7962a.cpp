@@ -133,7 +133,7 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
   for (uint8_t i = 0; i <= length; i++) {
     uint8_t temp = read_byte();
     this->rx_buff_.push_back(temp);
-    ESP_LOGVV(TAG, "byte received %02x", this->rx_buff_.back());
+    ESP_LOGD(TAG, "byte received %02x", this->rx_buff_.back());
   }
   this->set_mode(write_mode_);
   this->disable();
