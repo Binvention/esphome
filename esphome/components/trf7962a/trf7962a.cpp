@@ -135,8 +135,8 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
                    (uint8_t) TRF7962A_TRANS_TYPE::CONTINUOUS);
   this->set_mode(read_mode_);
   this->read_array(&this->rx_buff_[this->rx_buff_length_], length);
-  for (uint8_t i = rx_buff_length_; i <= rx_buff_length_ + length; i++) {
-    ESP_LOGD(TAG, "byte received %02x", rx_buff_[i]);
+  for (uint8_t i = rx_buff_length_; i < rx_buff_length_ + length; i++) {
+    ESP_LOGVV(TAG, "byte received %02x", rx_buff_[i]);
   }
   this->rx_buff_length_ += length;
   this->set_mode(write_mode_);
