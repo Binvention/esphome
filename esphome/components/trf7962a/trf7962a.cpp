@@ -126,8 +126,7 @@ void TRF7962A::write_register(TRF7962A_REG reg, uint8_t value) {
 }
 
 void TRF7962A::read_rx_bytes(uint8_t length) {
-  int start = rx_buff_length_;
-  if (start + length > 20) {
+  if (this->rx_buff_length_ + length > 20) {
     ESP_LOGE(TAG, "Not enough space in rx buffer");
     return;
   }
@@ -135,11 +134,12 @@ void TRF7962A::read_rx_bytes(uint8_t length) {
   this->write_byte((uint8_t) TRF7962A_REG::FIFO_IO_REG | (uint8_t) TRF7962A_TRANS_TYPE::READ |
                    (uint8_t) TRF7962A_TRANS_TYPE::CONTINUOUS);
   this->set_mode(read_mode_);
-  this->read_array(&this->rx_buff_[start], length);
+  this->read_array(&this->rx_buff_[this->rx_buff_length_], length);
   std::string rx_bytes_string = "";
-  for (uint8_t i = start; i < start + length; i++) {
+  for (uint8_t i = rx_buff_length_; i < rx_buff_length_ + length; i++) {
     rx_bytes_string += str_sprintf("%02x", rx_buff_[i]);
   }
+  this->rx_buff_length_ += length;
   ESP_LOGD(TAG, "bytes received %s", rx_bytes_string);
   this->set_mode(write_mode_);
   this->disable();
