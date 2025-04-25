@@ -124,7 +124,6 @@ class TRF7962A : public Component,
   void dump_config() override;
   void dump_registers();
   float get_setup_priority() const override { return setup_priority::DATA; }
-  void loop() override;
 
   void set_irq_pin(GPIOPin *irq_pin) { this->irq_pin_ = irq_pin; }
 
@@ -147,7 +146,7 @@ class TRF7962A : public Component,
  protected:
   void turn_field_on_();
   void turn_field_off_();
-
+  void process_irq_();
   void ISO15693_send_single_slot_inventory_();
   void ISO15693_get_random_slix_();
   void ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password);

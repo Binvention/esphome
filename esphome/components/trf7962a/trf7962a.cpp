@@ -32,6 +32,7 @@ void TRF7962A::setup() {
       this->turn_field_on_();
       this->search_tag();
     });
+    this->set_interval("irq_loop", 25, [this]() { this->process_irq_(); });
   });
   this->tag_uid_[0] = 0;
   this->c_password_ = passwords_.cbegin();
@@ -68,7 +69,7 @@ void TRF7962A::dump_registers() {
   ESP_LOGD(TAG, "  TX_LEN_B2: 0x%02X", this->read_register(TX_LEN_B2));                // TX Length Byte 2
 }
 
-void TRF7962A::loop() {
+void TRF7962A::process_irq_() {
   if (irq_pin_->digital_read()) {
     this->enable();
     this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
