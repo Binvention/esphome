@@ -18,6 +18,7 @@ void TRF7962A::setup() {
   this->irq_pin_->setup();
   this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
   this->rx_ready_ = false;
+  this->rx_buff_length_ = 0;
   this->send_command(TRF7962A_CMD::SOFT_INIT);
   this->send_command(TRF7962A_CMD::IDLING);
   this->set_timeout(50, [this]() {
@@ -125,16 +126,21 @@ void TRF7962A::write_register(TRF7962A_REG reg, uint8_t value) {
 }
 
 void TRF7962A::read_rx_bytes(uint8_t length) {
-  int start = rx_buff_.size();
+  int start = rx_buff_length_;
+  if (start + length > 20) {
+    ESP_LOGE(TAG, "Not enough space in rx buffer");
+    return;
+  }
   this->enable();
   this->write_byte((uint8_t) TRF7962A_REG::FIFO_IO_REG | (uint8_t) TRF7962A_TRANS_TYPE::READ |
                    (uint8_t) TRF7962A_TRANS_TYPE::CONTINUOUS);
   this->set_mode(read_mode_);
-  for (uint8_t i = 0; i <= length; i++) {
-    uint8_t temp = read_byte();
-    this->rx_buff_.push_back(temp);
-    ESP_LOGD(TAG, "byte received %02x", this->rx_buff_.back());
+  this->read_array(&this->rx_buff_[start], length);
+  std::string rx_bytes_string = "";
+  for (uint8_t i = start; i < start + length; i++) {
+    rx_bytes_string += str_sprintf("%02x", rx_buff_[i]);
   }
+  ESP_LOGD(TAG, "bytes received %s", rx_bytes_string);
   this->set_mode(write_mode_);
   this->disable();
   // check for and remove ghost bytes
@@ -164,7 +170,7 @@ void TRF7962A::turn_field_on_() {
 }
 
 void TRF7962A::ISO15693_send_single_slot_inventory_() {
-  this->rx_buff_.clear();
+  this->rx_buff_length_ = 0;
   this->rx_ready_ = false;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
@@ -182,7 +188,7 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
 }
 
 void TRF7962A::ISO15693_get_random_slix_() {
-  this->rx_buff_.clear();
+  this->rx_buff_length_ = 0;
   this->rx_ready_ = false;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
@@ -204,7 +210,7 @@ void TRF7962A::ISO15693_get_random_slix_() {
 }
 
 void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password) {
-  this->rx_buff_.clear();
+  this->rx_buff_length_ = 0;
   this->rx_ready_ = false;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
@@ -231,8 +237,7 @@ void TRF7962A::wait_for_rx() {
   this->set_retry("rx_wait", 50, 10, [this](const uint8_t attempts) {
     RetryResult result = RetryResult::RETRY;
     if (this->rx_ready_) {
-      uint8_t flags = this->rx_buff_.front();
-      this->rx_buff_.pop_front();
+      uint8_t flags = this->rx_buff_[0];
       switch (this->transfer_status_) {
         case WAIT_RANDOM:
           process_random();
@@ -274,7 +279,7 @@ void TRF7962A::wait_for_rx() {
       c_password_ = passwords_.cbegin();
       this->transfer_status_ = NO_TRANSACTIONS;
       this->last_random_[0] = 0;
-      this->rx_buff_.clear();
+      this->rx_buff_length_ = 0;
       this->rx_ready_ = false;
       this->search_tag();
     }
@@ -283,13 +288,13 @@ void TRF7962A::wait_for_rx() {
 }
 
 void TRF7962A::process_random() {
-  if (this->rx_buff_.size() != 2) {
-    ESP_LOGE(TAG, "only two items should be in the rx buffer but there are actually %0d items in buffer",
-             this->rx_buff_.size());
+  if (this->rx_buff_length_ != 3) {
+    ESP_LOGE(TAG, "only three items should be in the rx buffer but there are actually %0d items in buffer",
+             this->rx_buff_length_);
     search_tag();
   } else {
-    this->last_random_[1] = this->rx_buff_[0];
-    this->last_random_[0] = this->rx_buff_[1];
+    this->last_random_[1] = this->rx_buff_[1];
+    this->last_random_[0] = this->rx_buff_[2];
     ESP_LOGV(TAG, "New random received %x%x", this->last_random_[1], this->last_random_[0]);
     if (!tag_uid_[0]) {
       if (this->passwords_.empty()) {
@@ -311,20 +316,17 @@ void TRF7962A::process_random() {
 }
 
 void TRF7962A::process_uid() {
-  if (this->rx_buff_.size() != 9) {
-    ESP_LOGE(TAG, "only 9 items should be in the rx buffer but there are actually %0d items in buffer",
-             this->rx_buff_.size());
-    if (this->rx_buff_.size() > 0 && this->rx_buff_.size() < 20) {
-      for (auto item : rx_buff_) {
-        ESP_LOGVV(TAG, "Data %02x", item);
-      }
+  if (this->rx_buff_length_ != 10) {
+    ESP_LOGE(TAG, "only 10 items should be in the rx buffer but there are actually %0d items in buffer",
+             this->rx_buff_length_);
+    for (int i = 0; i < rx_buff_length_; i++) {
+      ESP_LOGVV(TAG, "Data %02x", rx_buff_[i]);
     }
   } else {
     bool update = false;
-    this->rx_buff_.pop_front();  // get rid of DSFID
     if (this->tag_uid_[0]) {
       for (uint8_t i = 0; i < 8; i++) {
-        if (this->tag_uid_[i] != this->rx_buff_[i]) {
+        if (this->tag_uid_[i] != this->rx_buff_[i + 2]) {
           for (auto *trigger : triggers_ontagremoved_) {
             trigger->trigger(0);
           }
@@ -339,7 +341,7 @@ void TRF7962A::process_uid() {
     if (update) {
       uint64_t result = 0;
       for (uint8_t offset = 0; offset < 8; offset++) {
-        this->tag_uid_[offset] = this->rx_buff_[offset];
+        this->tag_uid_[offset] = this->rx_buff_[offset + 2];
         result |= ((uint64_t) this->tag_uid_[offset]) << (offset * 8);
       }
       for (auto *trigger : triggers_ontag_) {
