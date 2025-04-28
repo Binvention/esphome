@@ -279,7 +279,7 @@ void TRF7962A::wait_for_rx() {
 
 void TRF7962A::process_random() {
   if (this->rx_buff_length_ != 3) {
-    ESP_LOGE(TAG, "only three items should be in the rx buffer but there are actually %0d items in buffer",
+    ESP_LOGV(TAG, "only three items should be in the rx buffer but there are actually %0d items in buffer",
              this->rx_buff_length_);
     search_tag();
   } else {
@@ -307,7 +307,7 @@ void TRF7962A::process_random() {
 
 void TRF7962A::process_uid() {
   if (this->rx_buff_length_ != 10) {
-    ESP_LOGE(TAG, "only 10 items should be in the rx buffer but there are actually %0d items in buffer",
+    ESP_LOGV(TAG, "only 10 items should be in the rx buffer but there are actually %0d items in buffer",
              this->rx_buff_length_);
     for (int i = 0; i < rx_buff_length_; i++) {
       ESP_LOGVV(TAG, "Data %02x", rx_buff_[i]);
