@@ -146,7 +146,6 @@ class TRF7962A : public Component,
  protected:
   void turn_field_on_();
   void turn_field_off_();
-  void process_irq_();
   void ISO15693_send_single_slot_inventory_();
   void ISO15693_get_random_slix_();
   void ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password);
@@ -165,7 +164,6 @@ class TRF7962A : public Component,
   uint8_t tag_uid_[8];
   // TAG_EVENT tag_status_;
   bool field_on_;
-  bool rx_ready_;
   uint8_t last_random_[2];
   TRANSFER_STATUS transfer_status_;
   uint8_t rx_buff_[20];

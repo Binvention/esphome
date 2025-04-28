@@ -17,7 +17,6 @@ void TRF7962A::setup() {
   this->set_mode(write_mode_);  // default to writing mode
   this->irq_pin_->setup();
   this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
-  this->rx_ready_ = false;
   this->rx_buff_length_ = 0;
   this->send_command(TRF7962A_CMD::SOFT_INIT);
   this->send_command(TRF7962A_CMD::IDLING);
@@ -32,7 +31,6 @@ void TRF7962A::setup() {
       this->turn_field_on_();
       this->search_tag();
     });
-    this->set_interval("irq_loop", 25, [this]() { this->process_irq_(); });
   });
   this->tag_uid_[0] = 0;
   this->c_password_ = passwords_.cbegin();
@@ -67,36 +65,6 @@ void TRF7962A::dump_registers() {
   ESP_LOGD(TAG, "  FIFO_STAT: 0x%02X", this->read_register(FIFO_STAT));                // FIFO status
   ESP_LOGD(TAG, "  TX_LEN_B1: 0x%02X", this->read_register(TX_LEN_B1));                // TX Length Byte 1
   ESP_LOGD(TAG, "  TX_LEN_B2: 0x%02X", this->read_register(TX_LEN_B2));                // TX Length Byte 2
-}
-
-void TRF7962A::process_irq_() {
-  if (irq_pin_->digital_read()) {
-    this->enable();
-    this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
-    this->set_mode(read_mode_);  // switch to reading mode
-    uint8_t irq = this->read_byte();
-    this->read_byte();            // dummy read needed to clear irq
-    this->set_mode(write_mode_);  // set back to write mode
-    this->disable();
-    ESP_LOGV(TAG, "IRQ received %0x", irq);
-    if (irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
-      uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
-      if (length & 0x10) {
-        ESP_LOGE(TAG, "Error FIFO overflow detected");
-      }
-      this->read_rx_bytes((length & 0x0f) + 1);
-      this->send_command(RESET_FIFO);
-      rx_ready_ = true;
-    } else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
-      uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
-      if (length & 0x10) {
-        ESP_LOGE(TAG, "Error FIFO overflow detected");
-      }
-      if (length & 0x40) {
-        this->read_rx_bytes((length & 0x0f) + 1);
-      }
-    }
-  }
 }
 
 void TRF7962A::send_command(TRF7962A_CMD command) {
@@ -170,7 +138,6 @@ void TRF7962A::turn_field_on_() {
 
 void TRF7962A::ISO15693_send_single_slot_inventory_() {
   this->rx_buff_length_ = 0;
-  this->rx_ready_ = false;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -188,7 +155,6 @@ void TRF7962A::ISO15693_send_single_slot_inventory_() {
 
 void TRF7962A::ISO15693_get_random_slix_() {
   this->rx_buff_length_ = 0;
-  this->rx_ready_ = false;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -210,7 +176,6 @@ void TRF7962A::ISO15693_get_random_slix_() {
 
 void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> password) {
   this->rx_buff_length_ = 0;
-  this->rx_ready_ = false;
   this->enable();
   this->write_byte(TRF7962A_CMD::RESET_FIFO);
   this->write_byte(TRF7962A_CMD::TRANSMIT_CRC);
@@ -233,38 +198,65 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
 void TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData) {}
 
 void TRF7962A::wait_for_rx() {
-  this->set_retry("rx_wait", 50, 10, [this](const uint8_t attempts) {
+  this->set_retry("rx_wait", 10, 20, [this](const uint8_t attempts) {
     RetryResult result = RetryResult::RETRY;
-    if (this->rx_ready_) {
-      uint8_t flags = this->rx_buff_[0];
-      switch (this->transfer_status_) {
-        case WAIT_RANDOM:
-          process_random();
-          break;
-        case WAIT_INVENTORY:
-          process_uid();
-          break;
-        case WAIT_PASSWORD:
-          if (!flags) {
-            // no errors so password is successful
-            ESP_LOGD(TAG, "Password successful!");
-            this->ISO15693_send_single_slot_inventory_();
-          } else {
-            ESP_LOGD(TAG, "Password failed");
-            // reset feild since tag won't respond until it is
+    if (irq_pin_->digital_read()) {
+      this->enable();
+      this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
+      this->set_mode(read_mode_);  // switch to reading mode
+      uint8_t irq = this->read_byte();
+      this->read_byte();            // dummy read needed to clear irq
+      this->set_mode(write_mode_);  // set back to write mode
+      this->disable();
+      ESP_LOGV(TAG, "IRQ received %0x", irq);
+      if (irq & TRF7962A_IRQ_STAT::RX_COMPLETE) {
+        uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
+        if (length & 0x10) {
+          ESP_LOGE(TAG, "Error FIFO overflow detected");
+        }
+        this->read_rx_bytes((length & 0x0f) + 1);
+        this->send_command(RESET_FIFO);
+        // process rx
+        uint8_t flags = this->rx_buff_[0];
+        switch (this->transfer_status_) {
+          case WAIT_RANDOM:
+            process_random();
+            break;
+          case WAIT_INVENTORY:
+            process_uid();
+            break;
+          case WAIT_PASSWORD:
+            if (!flags) {
+              // no errors so password is successful
+              ESP_LOGD(TAG, "Password successful!");
+              this->ISO15693_send_single_slot_inventory_();
+            } else {
+              ESP_LOGD(TAG, "Password failed");
+              // reset feild since tag won't respond until it is
+              this->last_random_[0] = 0;
+              this->search_tag();
+            }
+            break;
+          default:
+            ESP_LOGE(TAG, "ERROR invalid transaction status");
             this->last_random_[0] = 0;
             this->search_tag();
-          }
-          break;
-        default:
-          ESP_LOGE(TAG, "ERROR invalid transaction status");
-          this->last_random_[0] = 0;
-          this->search_tag();
-          break;
+            break;
+        }
+        this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
+        result = RetryResult::DONE;
+      } else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
+        uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
+        if (length & 0x10) {
+          ESP_LOGE(TAG, "Error FIFO overflow detected");
+        }
+        if (length & 0x40) {
+          this->read_rx_bytes((length & 0x0f) + 1);
+        }
       }
-      this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
-      result = RetryResult::DONE;
-    } else if (attempts == 0) {
+    }
+
+    if (attempts == 0 && result == RetryResult::RETRY) {
       if (tag_uid_[0]) {
         tag_uid_[0] = 0;
         for (auto *trigger : triggers_ontagremoved_) {
@@ -279,7 +271,6 @@ void TRF7962A::wait_for_rx() {
       this->transfer_status_ = NO_TRANSACTIONS;
       this->last_random_[0] = 0;
       this->rx_buff_length_ = 0;
-      this->rx_ready_ = false;
       this->search_tag();
     }
     return result;
