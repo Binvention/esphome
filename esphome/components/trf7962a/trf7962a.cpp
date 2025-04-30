@@ -191,7 +191,7 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
   }
   this->disable();
   this->transfer_status_ = TRANSFER_STATUS::WAIT_PASSWORD;
-  ESP_LOGV(TAG, "Sending Password");
+  ESP_LOGV(TAG, "Sending Password %x%x%x%x", password[3], password[2], password[1], password[0]);
   this->wait_for_rx();
 }
 
@@ -267,7 +267,6 @@ void TRF7962A::wait_for_rx() {
         last_random_[0] = 0;
       }
       is_searching_ = true;
-      c_password_ = passwords_.cbegin();
       this->transfer_status_ = NO_TRANSACTIONS;
       this->last_random_[0] = 0;
       this->rx_buff_length_ = 0;
@@ -283,8 +282,8 @@ void TRF7962A::process_random() {
              this->rx_buff_length_);
     search_tag();
   } else {
-    this->last_random_[1] = this->rx_buff_[1];
-    this->last_random_[0] = this->rx_buff_[2];
+    this->last_random_[0] = this->rx_buff_[1];
+    this->last_random_[1] = this->rx_buff_[2];
     ESP_LOGV(TAG, "New random received %x%x", this->last_random_[1], this->last_random_[0]);
     if (!tag_uid_[0]) {
       if (this->passwords_.empty()) {
@@ -295,6 +294,7 @@ void TRF7962A::process_random() {
           this->ISO15693_unlock_privacy_slix_(*c_password_++);
         } else {
           ESP_LOGE(TAG, "No provided passwords worked");
+          c_password_ = passwords_.cbegin();
           search_tag();
         }
       }
