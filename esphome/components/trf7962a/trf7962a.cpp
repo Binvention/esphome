@@ -186,7 +186,7 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
   this->write_byte(0xb3);  // set password
   this->write_byte(0x04);  // NXP manufacturer
   this->write_byte(0x04);  // privacy password
-  for (uint8_t i = 4; i > 4; i--) {
+  for (uint8_t i = 0; i < 4; i++) {
     this->write_byte(password[i] ^ last_random_[i & 1]);
   }
   this->disable();
