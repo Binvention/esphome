@@ -10,9 +10,9 @@ namespace storage {
 class Storage : public EntityBase {
  public:
   virtual uint8_t direct_read_byte(uint32_t offset);
-  virtual void direct_write_byte(uint32_t offset, uint8_t data);
-  virtual void direct_read_byte_array(uint32_t offset, uint8_t *data, uint32_t data_length);
-  virtual void direct_write_byte_array(uint32_t offset, uint8_t *data, uint32_t data_length);
+  virtual bool direct_write_byte(uint32_t offset, uint8_t data);
+  virtual size_t direct_read_byte_array(uint32_t offset, uint8_t *data, uint32_t data_length);
+  virtual bool direct_write_byte_array(uint32_t offset, uint8_t *data, uint32_t data_length);
   virtual void set_file(String file);
   virtual void create_file(String file, size_t max_size = 0);
   // uint8_t read();
