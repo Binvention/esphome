@@ -57,5 +57,7 @@ bool sd_mmc_storage::direct_append_byte_array(uint8_t *data, size_t data_length)
   return false;
 }
 
+void sd_mmc_storage::set_file(String path) { this->current_path_ = path; }
+
 }  // namespace sd_mmc_storage
 }  // namespace esphome
