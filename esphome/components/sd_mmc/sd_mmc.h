@@ -3,7 +3,7 @@
 #include "esphome/core/defines.h"
 #include "esphome/core/component.h"
 #include "esphome/core/automation.h"
-#include "esphome/components/ storage/storage.h"
+#include "esphome/components/storage/storage.h"
 #ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
 #endif
@@ -56,9 +56,9 @@ class SdMmc : public storage::Storage, Component {
   void setup() override;
   void loop() override;
   void dump_config() override;
-  void write_file(const char *path, const uint8_t *buffer, size_t len, const char *mode);
-  void write_file(const char *path, const uint8_t *buffer, size_t len);
-  void append_file(const char *path, const uint8_t *buffer, size_t len);
+  void write_file(const char *path, const uint8_t *buffer, size_t length, const char *mode);
+  void write_file(const char *path, const uint8_t *buffer, size_t length);
+  void append_file(const char *path, const uint8_t *buffer, size_t length);
   bool delete_file(const char *path);
   bool delete_file(String const &path);
   bool create_directory(const char *path);

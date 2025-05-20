@@ -152,6 +152,25 @@ std::vector<uint8_t> SdMmc::read_file(char const *path) {
   return res;
 }
 
+size_t SdMmc::read_file_chunk(const char *path, size_t offset, uint8_t *buffer, size_t length) {
+  ESP_LOGV(TAG, "Read File: %s", path);
+
+  std::string absolut_path = build_path(path);
+  FILE *file = nullptr;
+  file = fopen(absolut_path.c_str(), "rb");
+  if (file == nullptr) {
+    ESP_LOGE(TAG, "Failed to open file for reading");
+    return 0;
+  }
+
+  if (fseek(file, offset)) {
+    return 0;
+  }
+  size_t result = fread(buffer, 1, length, file);
+  fclose(file);
+  return result;
+}
+
 std::vector<FileInfo> &SdMmc::list_directory_file_info_rec(const char *path, uint8_t depth,
                                                            std::vector<FileInfo> &list) {
   ESP_LOGV(TAG, "Listing directory file info: %s\n", path);

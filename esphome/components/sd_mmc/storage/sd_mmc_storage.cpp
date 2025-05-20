@@ -17,10 +17,44 @@ uint8_t sd_mmc_storage::direct_read_byte(size_t offset) {
   return 0;
 }
 
-void sd_mmc_storage::direct_read_array(size_t offset, uint8_t *data, size_t data_length) {
+size_t sd_mmc_storage::direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length) {
   if (this->sd_ref_ != nullptr) {
-    size_t read = this->sd_ref_->read_file_chunk(this->current_path_, offset, data, data_length);
+    return this->sd_ref_->read_file_chunk(this->current_path_, offset, data, data_length);
   }
+  ESP_LOGE(TAG, "Unable to properly read value from sd card");
+  return 0;
+}
+
+bool sd_mmc_storage::direct_write_byte(uint8_t data) {
+  if (this->sd_ref_ != nullptr) {
+    this->sd_ref_->write_file(this->current_path_.c_str(), &data, 1);
+    return true;
+  }
+  return false;
+}
+
+bool sd_mmc_storage::direct_write_byte_array(uint8_t *data, size_t data_length) {
+  if (this->sd_ref_ != nullptr) {
+    this->sd_ref_->write_file(this->current_path_.c_str(), data, data_length);
+    return true;
+  }
+  return false;
+}
+
+bool sd_mmc_storage::direct_append_byte(uint8_t data) {
+  if (this->sd_ref_ != nullptr) {
+    this->sd_ref_->append_file(this->current_path_.c_str(), &data, 1);
+    return true;
+  }
+  return false;
+}
+
+bool sd_mmc_storage::direct_append_byte_array(uint8_t *data, size_t data_length) {
+  if (this->sd_ref_ != nullptr) {
+    this->sd_ref_->append_file(this->current_path_.c_str(), data, data_length);
+    return true;
+  }
+  return false;
 }
 
 }  // namespace sd_mmc_storage
