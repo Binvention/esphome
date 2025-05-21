@@ -16,8 +16,8 @@ class sd_mmc_storage : public storage::Storage, Component {
   bool direct_write_byte_array(uint8_t *data, size_t data_length);
   bool direct_append_byte_array(uint8_t *data, size_t data_length);
   void set_file(String file);
-  std::vector<String> list_directory(String path);
-
+  std::vector<storage::FileInfo> list_directory(String path);
+  storage::FileInfo get_file_info(String path);
   void set_sd_mmc(sd_mmc::SdMmc *value) { this->sd_ref_ = value; };
 
  protected:

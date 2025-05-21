@@ -30,15 +30,7 @@ struct FileSizeSensor {
 };
 #endif
 
-struct FileInfo {
-  String path;
-  size_t size;
-  bool is_directory;
-
-  FileInfo(String const &, size_t, bool);
-};
-
-class SdMmc : public storage::Storage, Component {
+class SdMmc : public Component {
 #ifdef USE_SENSOR
   SUB_SENSOR(used_space)
   SUB_SENSOR(total_space)
@@ -71,8 +63,9 @@ class SdMmc : public storage::Storage, Component {
   bool is_directory(String const &path);
   std::vector<String> list_directory(const char *path, uint8_t depth);
   std::vector<String> list_directory(String path, uint8_t depth);
-  std::vector<FileInfo> list_directory_file_info(const char *path, uint8_t depth);
-  std::vector<FileInfo> list_directory_file_info(String path, uint8_t depth);
+  std::vector<storage::FileInfo> list_directory_file_info(const char *path, uint8_t depth);
+  std::vector<storage::FileInfo> list_directory_file_info(String path, uint8_t depth);
+  storage::FileInfo file_info(String path);
   size_t file_size(const char *path);
   size_t file_size(String const &path);
 #ifdef USE_SENSOR
@@ -113,7 +106,8 @@ class SdMmc : public storage::Storage, Component {
 #ifdef USE_ESP_IDF
   String sd_card_type() const;
 #endif
-  std::vector<FileInfo> &list_directory_file_info_rec(const char *path, uint8_t depth, std::vector<FileInfo> &list);
+  std::vector<storage::FileInfo> &list_directory_file_info_rec(const char *path, uint8_t depth,
+                                                               std::vector<storage::FileInfo> &list);
   static String error_code_to_string(ErrorCode);
 };
 

@@ -63,8 +63,8 @@ void SdMmc::append_file(const char *path, const uint8_t *buffer, size_t len) {
 
 std::vector<String> SdMmc::list_directory(const char *path, uint8_t depth) {
   std::vector<String> list;
-  std::vector<FileInfo> infos = list_directory_file_info(path, depth);
-  std::transform(infos.cbegin(), infos.cend(), list.begin(), [](FileInfo const &info) { return info.path; });
+  std::vector<storage::FileInfo> infos = list_directory_file_info(path, depth);
+  std::transform(infos.cbegin(), infos.cend(), list.begin(), [](storage::FileInfo const &info) { return info.path; });
   return list;
 }
 
@@ -72,14 +72,18 @@ std::vector<String> SdMmc::list_directory(String path, uint8_t depth) {
   return this->list_directory(path.c_str(), depth);
 }
 
-std::vector<FileInfo> SdMmc::list_directory_file_info(const char *path, uint8_t depth) {
-  std::vector<FileInfo> list;
+std::vector<storage::FileInfo> SdMmc::list_directory_file_info(const char *path, uint8_t depth) {
+  std::vector<storage::FileInfo> list;
   list_directory_file_info_rec(path, depth, list);
   return list;
 }
 
-std::vector<FileInfo> SdMmc::list_directory_file_info(String path, uint8_t depth) {
+std::vector<storage::FileInfo> SdMmc::list_directory_file_info(String path, uint8_t depth) {
   return this->list_directory_file_info(path.c_str(), depth);
+}
+
+storage::FileInfo SdMmc::file_info(String path) {
+  return storage::FileInfo(path, this->file_size(path), this->is_directory(path));
 }
 
 size_t SdMmc::file_size(String const &path) { return this->file_size(path.c_str()); }
@@ -167,9 +171,6 @@ String format_size(size_t size) {
   snprintf(buffer, sizeof(buffer), "%.2f %s", convertBytes(size, unit), memory_unit_to_string(unit).c_str());
   return String(buffer);
 }
-
-FileInfo::FileInfo(String const &path, size_t size, bool is_directory)
-    : path(path), size(size), is_directory(is_directory) {}
 
 }  // namespace sd_mmc
 }  // namespace esphome
