@@ -59,5 +59,12 @@ bool sd_mmc_storage::direct_append_byte_array(uint8_t *data, size_t data_length)
 
 void sd_mmc_storage::set_file(String path) { this->current_path_ = path; }
 
+std::vector<String> sd_mmc_storage::list_directory(String path) {
+  if (this->sd_ref_ != nullptr) {
+    return this->sd_ref_->list_directory(path, 0);
+  }
+  return std::vector<String>();
+}
+
 }  // namespace sd_mmc_storage
 }  // namespace esphome
