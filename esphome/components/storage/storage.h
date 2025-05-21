@@ -2,7 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/core/entity_base.h"
-#include <map>
+#include <vector>
 
 namespace esphome {
 namespace storage {
@@ -16,6 +16,7 @@ class Storage : public EntityBase {
   virtual bool direct_write_byte_array(uint8_t *data, uint32_t data_length);
   virtual bool direct_append_byte_array(uint8_t *data, uint32_t data_length);
   virtual void set_file(String file);
+  virtual std::vector<std::pair<String, bool>> list_directory(String path);
   // uint8_t read();
   // void write(uint8_t data);
   // uint8_t read_byte (uint32_t offset);
