@@ -9,6 +9,8 @@ namespace esphome {
 namespace storage {
 
 static const char *const TAG = "storage";
+FileInfo::FileInfo(String const &path, size_t size, bool is_directory)
+    : path(path), size(size), is_directory(is_directory) {}
 
 // uint8_t Storage::read() {
 //    uint8_t data;
