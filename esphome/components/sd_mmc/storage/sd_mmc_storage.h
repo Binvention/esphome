@@ -22,7 +22,7 @@ class sd_mmc_storage : public storage::Storage, Component {
 
  protected:
   sd_mmc::SdMmc *sd_ref_;
-  String current_path_;
+  storage::FileInfo current_file_;
 };
 
 }  // namespace sd_mmc_storage

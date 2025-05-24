@@ -6,9 +6,13 @@ namespace sd_mmc_storage {
 static const char *TAG = "SD_MMC_STORAGE";
 
 uint8_t sd_mmc_storage::direct_read_byte(size_t offset) {
+  if (this->current_file_.is_directory) {
+    ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
+    return 0;
+  }
   if (this->sd_ref_ != nullptr) {
     uint8_t value;
-    size_t read = this->sd_ref_->read_file_chunk(this->current_path_, offset, &value, (size_t) 1);
+    size_t read = this->sd_ref_->read_file_chunk(this->current_file_.path, offset, &value, (size_t) 1);
     if (read == 1) {
       return value;
     }
@@ -18,46 +22,76 @@ uint8_t sd_mmc_storage::direct_read_byte(size_t offset) {
 }
 
 size_t sd_mmc_storage::direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length) {
+  if (this->current_file_.is_directory) {
+    ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
+    return 0;
+  }
   if (this->sd_ref_ != nullptr) {
-    return this->sd_ref_->read_file_chunk(this->current_path_, offset, data, data_length);
+    return this->sd_ref_->read_file_chunk(this->current_file_.path, offset, data, data_length);
   }
   ESP_LOGE(TAG, "Unable to properly read value from sd card");
   return 0;
 }
 
 bool sd_mmc_storage::direct_write_byte(uint8_t data) {
+  if (this->current_file_.is_directory) {
+    ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
+    return false;
+  }
   if (this->sd_ref_ != nullptr) {
-    this->sd_ref_->write_file(this->current_path_.c_str(), &data, 1);
+    this->sd_ref_->write_file(this->current_file_.path.c_str(), &data, 1);
     return true;
   }
   return false;
 }
 
 bool sd_mmc_storage::direct_write_byte_array(uint8_t *data, size_t data_length) {
+  if (this->current_file_.is_directory) {
+    ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
+    return false;
+  }
   if (this->sd_ref_ != nullptr) {
-    this->sd_ref_->write_file(this->current_path_.c_str(), data, data_length);
+    this->sd_ref_->write_file(this->current_file_.path.c_str(), data, data_length);
     return true;
   }
   return false;
 }
 
 bool sd_mmc_storage::direct_append_byte(uint8_t data) {
+  if (this->current_file_.is_directory) {
+    ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
+    return false;
+  }
   if (this->sd_ref_ != nullptr) {
-    this->sd_ref_->append_file(this->current_path_.c_str(), &data, 1);
+    this->sd_ref_->append_file(this->current_file_.path.c_str(), &data, 1);
     return true;
   }
   return false;
 }
 
 bool sd_mmc_storage::direct_append_byte_array(uint8_t *data, size_t data_length) {
+  if (this->current_file_.is_directory) {
+    ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
+    return false;
+  }
   if (this->sd_ref_ != nullptr) {
-    this->sd_ref_->append_file(this->current_path_.c_str(), data, data_length);
+    this->sd_ref_->append_file(this->current_file_.path.c_str(), data, data_length);
     return true;
   }
   return false;
 }
 
-void sd_mmc_storage::set_file(String path) { this->current_path_ = path; }
+void sd_mmc_storage::set_file(String path) {
+  this->current_file_ = this->get_file_info(path);
+  if (this->current_file_.is_directory) {
+    ESP_LOGE(TAG, "File %s is actually a directory", this->current_file_.path);
+    return;
+  }
+  if (this->current_file_.path.isEmpty()) {
+    ESP_LOGI(TAG, "File %s does not exist write to file to create it", path);
+    this->current_file_ = storage::FileInfo(path, 0, false);
+  }
+}
 
 storage::FileInfo sd_mmc_storage::get_file_info(String path) {
   if (this->sd_ref_ != nullptr) {
