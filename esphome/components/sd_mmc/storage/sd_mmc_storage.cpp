@@ -81,15 +81,10 @@ bool sd_mmc_storage::direct_append_byte_array(uint8_t *data, size_t data_length)
   return false;
 }
 
-void sd_mmc_storage::set_file(String path) {
-  this->current_file_ = this->get_file_info(path);
+void sd_mmc_storage::direct_set_file(String path) {
   if (this->current_file_.is_directory) {
     ESP_LOGE(TAG, "File %s is actually a directory", this->current_file_.path);
     return;
-  }
-  if (this->current_file_.path.isEmpty()) {
-    ESP_LOGI(TAG, "File %s does not exist write to file to create it", path);
-    this->current_file_ = storage::FileInfo(path, 0, false);
   }
 }
 
