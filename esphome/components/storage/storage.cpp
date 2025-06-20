@@ -14,18 +14,20 @@ FileInfo::FileInfo(String const &path, size_t size, bool is_directory)
   this->read_offset = 0;
 }
 
-void Storage::set_file(String file) {
-  this->current_file_ = this->get_file_info(file);
-  if (this->current_file_.path == "") {
-    this->current_file_.path = file;
+std::vector<FileInfo> Storage::list_directory(String path) { return this->direct_list_directory(path); }
+
+FileInfo Storage::get_file_info(String path) { return this->direct_get_file_info(path); }
+
+void Storage::set_file(FileInfo *file) {
+  if (this->current_file_ != file) {
+    this->current_file_ = file;
+    this->direct_set_file(this->current_file_->path);
   }
-  this->current_file_.read_offset = 0;
-  this->direct_set_file(file);
 }
 
 uint8_t Storage::read() {
   uint8_t data;
-  data = this->direct_read_byte(this->current_file_.read_offset);
+  data = this->direct_read_byte(this->current_file_->read_offset);
   this->update_offset(1);
   return data;
 }
@@ -42,7 +44,7 @@ bool Storage::write(uint8_t data) {
 bool Storage::append(uint8_t data) { return this->direct_append_byte(data); }
 
 size_t Storage::read_array(uint8_t *data, size_t data_length) {
-  size_t num_bytes_read = this->direct_read_byte_array(this->current_file_.read_offset, data, data_length);
+  size_t num_bytes_read = this->direct_read_byte_array(this->current_file_->read_offset, data, data_length);
   this->update_offset(num_bytes_read);
   return num_bytes_read;
 }
@@ -67,7 +69,7 @@ bool Storage::append_array(uint8_t *data, size_t data_length) {
 // }
 
 void Storage::update_offset(size_t value) {
-  this->current_file_.read_offset += value;
+  this->current_file_->read_offset += value;
   //    if (this->current_offset_ > this->buffer_size_){
   //       if(this->max_offset_ && (this->base_offset_ + this->current_offset_ > this->max_offset_)) {
   //          if(this->buffer_offset_ != this->base_offset_){
@@ -85,7 +87,130 @@ void Storage::update_offset(size_t value) {
   //    }
 }
 
-void Storage::set_read_offset(size_t offset) { this->current_file_.read_offset = offset; }
+std::vector<FileInfo> StorageClient::list_directory(String path) {
+  int prefix_end = path.indexOf("://");
+  if (prefix_end < 0) {
+    ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
+    return;
+  }
+  String prefix = path.substring(0, prefix_end);
+  auto nstorage = storages.find(prefix);
+  if (nstorage == storages.end()) {
+    ESP_LOGE(TAG, "storage prefix does not exist");
+    return;
+  }
+  std::vector<FileInfo> result = nstorage->second->list_directory(path.substring(prefix_end + 3));
+  for (auto i = result.begin(); i != result.end(); i++) {
+    i->path = prefix + "://" + i->path;
+  }
+  return result;
+}
+
+FileInfo StorageClient::get_file_info(String path) {
+  int prefix_end = path.indexOf("://");
+  if (prefix_end < 0) {
+    ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
+    return;
+  }
+  String prefix = path.substring(0, prefix_end);
+  auto nstorage = storages.find(prefix);
+  if (nstorage == storages.end()) {
+    ESP_LOGE(TAG, "storage prefix does not exist");
+    return;
+  }
+  FileInfo result = nstorage->second->get_file_info(path.substring(prefix_end + 3));
+  result.path = prefix + "://" + result.path;
+  return result;
+}
+
+void StorageClient::set_file(String path) {
+  int prefix_end = path.indexOf("://");
+  if (prefix_end < 0) {
+    ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
+    return;
+  }
+  String prefix = path.substring(0, prefix_end);
+  auto nstorage = storages.find(prefix);
+  if (nstorage == storages.end()) {
+    ESP_LOGE(TAG, "storage prefix does not exist");
+    return;
+  }
+  this->current_storage_ = nstorage->second;
+  this->current_file_ = this->current_storage_->get_file_info(path.substring(prefix_end + 3));
+  this->current_storage_->set_file(&(this->current_file_));
+}
+
+uint8_t StorageClient::read() {
+  if (this->current_storage_) {
+    this->current_storage_->set_file(&(this->current_file_));
+    uint8_t result = current_storage_->read();
+  } else {
+    ESP_LOGE(TAG, "File has not been set");
+    return 0;
+  }
+}
+
+void StorageClient::set_read_offset(size_t offset) {
+  if (this->current_storage_) {
+    this->current_file_.read_offset = offset;
+  } else {
+    ESP_LOGE(TAG, "File has not been set");
+  }
+}
+
+bool StorageClient::write(uint8_t data) {
+  if (current_storage_) {
+    this->current_storage_->set_file(&(this->current_file_));
+    return current_storage_->write(data);
+  } else {
+    ESP_LOGE(TAG, "File has not been set");
+    return 0;
+  }
+}
+
+bool StorageClient::append(uint8_t data) {
+  if (current_storage_) {
+    this->current_storage_->set_file(&(this->current_file_));
+    return current_storage_->append(data);
+  } else {
+    ESP_LOGE(TAG, "File has not been set");
+    return 0;
+  }
+}
+
+size_t StorageClient::read_array(uint8_t *data, size_t data_length) {
+  if (current_storage_) {
+    this->current_storage_->set_file(&(this->current_file_));
+    return current_storage_->read_array(data, data_length);
+  } else {
+    ESP_LOGE(TAG, "File has not been set");
+    return 0;
+  }
+}
+
+bool StorageClient::write_array(uint8_t *data, size_t data_length) {
+  if (current_storage_) {
+    this->current_storage_->set_file(&(this->current_file_));
+    return current_storage_->write_array(data, data_length);
+  } else {
+    ESP_LOGE(TAG, "File has not been set");
+    return 0;
+  }
+}
+
+bool StorageClient::append_array(uint8_t *data, size_t data_length) {
+  if (current_storage_) {
+    this->current_storage_->set_file(&(this->current_file_));
+    return current_storage_->append_array(data, data_length);
+  } else {
+    ESP_LOGE(TAG, "File has not been set");
+    return 0;
+  }
+}
+
+void StorageClient::add_storage(Storage *storage_inst, String prefix) {
+  StorageClient::storages[prefix] = storage_inst;
+}
 
 }  // namespace storage
 }  // namespace esphome
