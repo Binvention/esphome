@@ -88,14 +88,14 @@ void sd_mmc_storage::direct_set_file(String path) {
   }
 }
 
-storage::FileInfo sd_mmc_storage::get_file_info(String path) {
+storage::FileInfo sd_mmc_storage::direct_get_file_info(String path) {
   if (this->sd_ref_ != nullptr) {
     return this->sd_ref_->file_info(path);
   }
   return storage::FileInfo("", 0, false);
 }
 
-std::vector<storage::FileInfo> sd_mmc_storage::list_directory(String path) {
+std::vector<storage::FileInfo> sd_mmc_storage::direct_list_directory(String path) {
   if (this->sd_ref_ != nullptr) {
     return this->sd_ref_->list_directory_file_info(path, 0);
   }

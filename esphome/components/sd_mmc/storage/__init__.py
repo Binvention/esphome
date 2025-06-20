@@ -22,3 +22,4 @@ async def to_code(config):
     await cg.register_component(var, config)
     sd_mmc_component = await cg.get_variable(config[CONF_SD_MMC_ID])
     cg.add(var.set_sd_mmc(sd_mmc_component))
+    storage.storage_to_code(config)
