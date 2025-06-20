@@ -3,6 +3,7 @@
 #include "esphome/core/component.h"
 #include "esphome/core/entity_base.h"
 #include <vector>
+#include <map>
 
 namespace esphome {
 namespace storage {
@@ -24,16 +25,16 @@ class Storage : public EntityBase {
   virtual size_t direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length);
   virtual bool direct_write_byte_array(uint8_t *data, size_t data_length);
   virtual bool direct_append_byte_array(uint8_t *data, size_t data_length);
-  virtual std::vector<FileInfo> list_directory(String path);
-  virtual FileInfo get_file_info(String path);
-  void set_file(String file);
+  std::vector<FileInfo> list_directory(String path);
+  FileInfo get_file_info(String path);
+  void set_file(FileInfo *file);
   uint8_t read();
-  void set_read_offset(size_t offset);
   bool write(uint8_t data);
   bool append(uint8_t data);
   size_t read_array(uint8_t *data, size_t data_length);
   bool write_array(uint8_t *data, size_t data_length);
   bool append_array(uint8_t *data, size_t data_length);
+
   // void write_buffer();
   // void refresh_buffer(uint32_t offset = 0);
   // uint8_t & operator[] (size_t index);
@@ -42,6 +43,8 @@ class Storage : public EntityBase {
 
  protected:
   virtual void direct_set_file(String file);
+  virtual FileInfo direct_get_file_info(String path);
+  virtual std::vector<FileInfo> direct_list_directory(String path);
   // void load_buffer (uint32_t offset, uint32_t buffer_offset, uint32_t length);
   // void write_buffer (uint32_t offset, uint32_t buffer_offset, uint32_t length);
   // void allocate_buffer(uint32_t buffer_size);
@@ -49,10 +52,30 @@ class Storage : public EntityBase {
   // uint8_t * buffer_;
   // uint32_t buffer_size_;
   // uint32_t buffer_offset_;
-  FileInfo current_file_;
+  FileInfo *current_file_;
   // uint32_t base_offset_;
   // uint32_t max_offset_;
   // bool write_on_shutdown_;
+};
+
+class StorageClient : public EntityBase {
+  std::vector<FileInfo> list_directory(String path);
+  FileInfo get_file_info(String path);
+  void set_file(String path);
+  uint8_t read();
+  void set_read_offset(size_t offset);
+  bool write(uint8_t data);
+  bool append(uint8_t data);
+  size_t read_array(uint8_t *data, size_t data_length);
+  bool write_array(uint8_t *data, size_t data_length);
+  bool append_array(uint8_t *data, size_t data_length);
+
+  static void add_storage(Storage *storage_inst, String prefix);
+
+ protected:
+  static std::map<String, Storage *> storages;
+  Storage *current_storage_;
+  FileInfo current_file_;
 };
 
 }  // namespace storage
