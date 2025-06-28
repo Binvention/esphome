@@ -9,11 +9,11 @@ namespace esphome {
 namespace storage {
 
 struct FileInfo {
-  String path;
+  std::string path;
   size_t size;
   bool is_directory;
   size_t read_offset;
-  FileInfo(String const &path, size_t size, bool is_directory);
+  FileInfo(std::string const &path, size_t size, bool is_directory);
 };
 
 class Storage : public EntityBase {
@@ -25,8 +25,8 @@ class Storage : public EntityBase {
   virtual size_t direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length);
   virtual bool direct_write_byte_array(uint8_t *data, size_t data_length);
   virtual bool direct_append_byte_array(uint8_t *data, size_t data_length);
-  std::vector<FileInfo> list_directory(String path);
-  FileInfo get_file_info(String path);
+  std::vector<FileInfo> list_directory(const std::string &path);
+  FileInfo get_file_info(const std::string &path);
   void set_file(FileInfo *file);
   uint8_t read();
   bool write(uint8_t data);
@@ -42,9 +42,9 @@ class Storage : public EntityBase {
   // void write_on_shutdown(bool value);
 
  protected:
-  virtual void direct_set_file(String file);
-  virtual FileInfo direct_get_file_info(String path);
-  virtual std::vector<FileInfo> direct_list_directory(String path);
+  virtual void direct_set_file(const std::string &file);
+  virtual FileInfo direct_get_file_info(const std::string &path);
+  virtual std::vector<FileInfo> direct_list_directory(const std::string &path);
   // void load_buffer (uint32_t offset, uint32_t buffer_offset, uint32_t length);
   // void write_buffer (uint32_t offset, uint32_t buffer_offset, uint32_t length);
   // void allocate_buffer(uint32_t buffer_size);
@@ -59,9 +59,9 @@ class Storage : public EntityBase {
 };
 
 class StorageClient : public EntityBase {
-  std::vector<FileInfo> list_directory(String path);
-  FileInfo get_file_info(String path);
-  void set_file(String path);
+  std::vector<FileInfo> list_directory(const std::string &path);
+  FileInfo get_file_info(const std::string &path);
+  void set_file(const std::string &path);
   uint8_t read();
   void set_read_offset(size_t offset);
   bool write(uint8_t data);
@@ -70,10 +70,10 @@ class StorageClient : public EntityBase {
   bool write_array(uint8_t *data, size_t data_length);
   bool append_array(uint8_t *data, size_t data_length);
 
-  static void add_storage(Storage *storage_inst, String prefix);
+  static void add_storage(Storage *storage_inst, std::string prefix);
 
  protected:
-  static std::map<String, Storage *> storages;
+  static std::map<std::string, Storage *> storages;
   Storage *current_storage_;
   FileInfo current_file_;
 };
