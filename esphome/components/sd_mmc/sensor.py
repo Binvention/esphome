@@ -3,7 +3,7 @@ from esphome.components import sensor
 import esphome.config_validation as cv
 from esphome.const import CONF_TYPE, ICON_MEMORY, STATE_CLASS_MEASUREMENT, UNIT_BYTES
 
-from . import CONF_PATH, CONF_SD_MMC_CARD_ID, SdMmc
+from . import CONF_PATH, CONF_SD_MMC_ID, SdMmc
 
 DEPENDENCIES = ["sd_mmc_card"]
 
@@ -22,7 +22,7 @@ BASE_CONFIG_SCHEMA = sensor.sensor_schema(
     state_class=STATE_CLASS_MEASUREMENT,
 ).extend(
     {
-        cv.GenerateID(CONF_SD_MMC_CARD_ID): cv.use_id(SdMmc),
+        cv.GenerateID(CONF_SD_MMC_ID): cv.use_id(SdMmc),
     }
 )
 
@@ -42,7 +42,7 @@ CONFIG_SCHEMA = cv.typed_schema(
 
 
 async def to_code(config):
-    sd_mmc_component = await cg.get_variable(config[CONF_SD_MMC_CARD_ID])
+    sd_mmc_component = await cg.get_variable(config[CONF_SD_MMC_ID])
     var = await sensor.new_sensor(config)
     if config[CONF_TYPE] in SIMPLE_TYPES:
         func = getattr(sd_mmc_component, f"set_{config[CONF_TYPE]}_sensor")
