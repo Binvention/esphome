@@ -9,14 +9,14 @@ namespace esphome {
 namespace storage {
 
 static const char *const TAG = "storage";
-FileInfo::FileInfo(String const &path, size_t size, bool is_directory)
+FileInfo::FileInfo(std::string const &path, size_t size, bool is_directory)
     : path(path), size(size), is_directory(is_directory) {
   this->read_offset = 0;
 }
 
-std::vector<FileInfo> Storage::list_directory(String path) { return this->direct_list_directory(path); }
+std::vector<FileInfo> Storage::list_directory(const std::string &path) { return this->direct_list_directory(path); }
 
-FileInfo Storage::get_file_info(String path) { return this->direct_get_file_info(path); }
+FileInfo Storage::get_file_info(const std::string &path) { return this->direct_get_file_info(path); }
 
 void Storage::set_file(FileInfo *file) {
   if (this->current_file_ != file) {
@@ -87,56 +87,56 @@ void Storage::update_offset(size_t value) {
   //    }
 }
 
-std::vector<FileInfo> StorageClient::list_directory(String path) {
-  int prefix_end = path.indexOf("://");
+std::vector<FileInfo> StorageClient::list_directory(const std::string &path) {
+  int prefix_end = path.find("://");
   if (prefix_end < 0) {
     ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
     return;
   }
-  String prefix = path.substring(0, prefix_end);
+  std::string prefix = path.substr(0, prefix_end);
   auto nstorage = storages.find(prefix);
   if (nstorage == storages.end()) {
     ESP_LOGE(TAG, "storage prefix does not exist");
     return;
   }
-  std::vector<FileInfo> result = nstorage->second->list_directory(path.substring(prefix_end + 3));
+  std::vector<FileInfo> result = nstorage->second->list_directory(path.substr(prefix_end + 3));
   for (auto i = result.begin(); i != result.end(); i++) {
     i->path = prefix + "://" + i->path;
   }
   return result;
 }
 
-FileInfo StorageClient::get_file_info(String path) {
-  int prefix_end = path.indexOf("://");
+FileInfo StorageClient::get_file_info(const std::string &path) {
+  int prefix_end = path.find("://");
   if (prefix_end < 0) {
     ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
     return;
   }
-  String prefix = path.substring(0, prefix_end);
+  std::string prefix = path.substr(0, prefix_end);
   auto nstorage = storages.find(prefix);
   if (nstorage == storages.end()) {
     ESP_LOGE(TAG, "storage prefix does not exist");
     return;
   }
-  FileInfo result = nstorage->second->get_file_info(path.substring(prefix_end + 3));
+  FileInfo result = nstorage->second->get_file_info(path.substr(prefix_end + 3));
   result.path = prefix + "://" + result.path;
   return result;
 }
 
-void StorageClient::set_file(String path) {
-  int prefix_end = path.indexOf("://");
+void StorageClient::set_file(const std::string &path) {
+  int prefix_end = path.find("://");
   if (prefix_end < 0) {
     ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
     return;
   }
-  String prefix = path.substring(0, prefix_end);
+  std::string prefix = path.substr(0, prefix_end);
   auto nstorage = storages.find(prefix);
   if (nstorage == storages.end()) {
     ESP_LOGE(TAG, "storage prefix does not exist");
     return;
   }
   this->current_storage_ = nstorage->second;
-  this->current_file_ = this->current_storage_->get_file_info(path.substring(prefix_end + 3));
+  this->current_file_ = this->current_storage_->get_file_info(path.substr(prefix_end + 3));
   this->current_storage_->set_file(&(this->current_file_));
 }
 
@@ -208,7 +208,7 @@ bool StorageClient::append_array(uint8_t *data, size_t data_length) {
   }
 }
 
-void StorageClient::add_storage(Storage *storage_inst, String prefix) {
+void StorageClient::add_storage(Storage *storage_inst, std::string prefix) {
   StorageClient::storages[prefix] = storage_inst;
 }
 
