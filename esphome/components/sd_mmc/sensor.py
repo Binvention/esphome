@@ -5,7 +5,7 @@ from esphome.const import CONF_TYPE, ICON_MEMORY, STATE_CLASS_MEASUREMENT, UNIT_
 
 from . import CONF_PATH, CONF_SD_MMC_ID, SdMmc
 
-DEPENDENCIES = ["sd_mmc_card"]
+DEPENDENCIES = ["sd_mmc"]
 
 CONF_USED_SPACE = "used_space"
 CONF_TOTAL_SPACE = "total_space"
