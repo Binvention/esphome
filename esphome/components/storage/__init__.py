@@ -7,7 +7,10 @@ storage_ns = cg.esphome_ns.namespace("storage")
 Storage = storage_ns.class_("Storage", cg.EntityBase)
 StorageClient = storage_ns.class_("StorageClient", cg.EntityBase)
 
+IS_PLATFORM_COMPONENT = True
+
 CONF_PREFIX = "path_prefix"
+
 
 STORAGE_SCHEMA = cv.Schema(
     {cv.GenerateID(): cv.declare_id(Storage), cv.Required(CONF_PREFIX): cv.string}
