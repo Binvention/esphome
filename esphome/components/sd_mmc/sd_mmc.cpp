@@ -11,7 +11,7 @@ namespace sd_mmc {
 static const char *TAG = "sd_mmc";
 
 #ifdef USE_SENSOR
-FileSizeSensor::FileSizeSensor(sensor::Sensor *sensor, String const &path) : sensor(sensor), path(path) {}
+FileSizeSensor::FileSizeSensor(sensor::Sensor *sensor, std::string const &path) : sensor(sensor), path(path) {}
 #endif
 
 void SdMmc::loop() {}
@@ -61,14 +61,14 @@ void SdMmc::append_file(const char *path, const uint8_t *buffer, size_t len) {
   this->write_file(path, buffer, len, "a");
 }
 
-std::vector<String> SdMmc::list_directory(const char *path, uint8_t depth) {
-  std::vector<String> list;
+std::vector<std::string> SdMmc::list_directory(const char *path, uint8_t depth) {
+  std::vector<std::string> list;
   std::vector<storage::FileInfo> infos = list_directory_file_info(path, depth);
   std::transform(infos.cbegin(), infos.cend(), list.begin(), [](storage::FileInfo const &info) { return info.path; });
   return list;
 }
 
-std::vector<String> SdMmc::list_directory(String path, uint8_t depth) {
+std::vector<std::string> SdMmc::list_directory(const std::string &path, uint8_t depth) {
   return this->list_directory(path.c_str(), depth);
 }
 
@@ -78,28 +78,28 @@ std::vector<storage::FileInfo> SdMmc::list_directory_file_info(const char *path,
   return list;
 }
 
-std::vector<storage::FileInfo> SdMmc::list_directory_file_info(String path, uint8_t depth) {
+std::vector<storage::FileInfo> SdMmc::list_directory_file_info(const std::string &path, uint8_t depth) {
   return this->list_directory_file_info(path.c_str(), depth);
 }
 
-storage::FileInfo SdMmc::file_info(String path) {
+storage::FileInfo SdMmc::file_info(const std::string &path) {
   return storage::FileInfo(path, this->file_size(path), this->is_directory(path));
 }
 
-size_t SdMmc::file_size(String const &path) { return this->file_size(path.c_str()); }
+size_t SdMmc::file_size(std::string const &path) { return this->file_size(path.c_str()); }
 
-bool SdMmc::is_directory(String const &path) { return this->is_directory(path.c_str()); }
+bool SdMmc::is_directory(std::string const &path) { return this->is_directory(path.c_str()); }
 
-bool SdMmc::delete_file(String const &path) { return this->delete_file(path.c_str()); }
+bool SdMmc::delete_file(std::string const &path) { return this->delete_file(path.c_str()); }
 
-std::vector<uint8_t> SdMmc::read_file(String const &path) { return this->read_file(path.c_str()); }
+std::vector<uint8_t> SdMmc::read_file(std::string const &path) { return this->read_file(path.c_str()); }
 
-size_t SdMmc::read_file_chunk(const String &path, size_t offset, uint8_t *buffer, size_t length) {
+size_t SdMmc::read_file_chunk(const std::string &path, size_t offset, uint8_t *buffer, size_t length) {
   return this->read_file_chunk(path.c_str(), offset, buffer, length);
 }
 
 #ifdef USE_SENSOR
-void SdMmc::add_file_size_sensor(sensor::Sensor *sensor, String const &path) {
+void SdMmc::add_file_size_sensor(sensor::Sensor *sensor, std::string const &path) {
   this->file_size_sensors_.emplace_back(sensor, path);
 }
 #endif
@@ -120,7 +120,7 @@ void SdMmc::set_mode_1bit(bool b) { this->mode_1bit_ = b; }
 
 void SdMmc::set_power_ctrl_pin(GPIOPin *pin) { this->power_ctrl_pin_ = pin; }
 
-String SdMmc::error_code_to_string(SdMmc::ErrorCode code) {
+std::string SdMmc::error_code_to_string(SdMmc::ErrorCode code) {
   switch (code) {
     case ErrorCode::ERR_PIN_SETUP:
       return "Failed to set pins";
@@ -137,7 +137,7 @@ long double convertBytes(uint64_t value, MemoryUnits unit) {
   return value * 1.0 / pow(1024, static_cast<uint64_t>(unit));
 }
 
-String memory_unit_to_string(MemoryUnits unit) {
+std::string memory_unit_to_string(MemoryUnits unit) {
   switch (unit) {
     case MemoryUnits::Byte:
       return "B";
@@ -165,11 +165,11 @@ MemoryUnits memory_unit_from_size(size_t size) {
   return static_cast<MemoryUnits>(unit);
 }
 
-String format_size(size_t size) {
+std::string format_size(size_t size) {
   MemoryUnits unit = memory_unit_from_size(size);
   char buffer[32];
   snprintf(buffer, sizeof(buffer), "%.2f %s", convertBytes(size, unit), memory_unit_to_string(unit).c_str());
-  return String(buffer);
+  return std::string(buffer);
 }
 
 }  // namespace sd_mmc

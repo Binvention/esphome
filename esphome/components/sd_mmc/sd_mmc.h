@@ -23,10 +23,10 @@ enum MemoryUnits : short { Byte = 0, KiloByte = 1, MegaByte = 2, GigaByte = 3, T
 #ifdef USE_SENSOR
 struct FileSizeSensor {
   sensor::Sensor *sensor{nullptr};
-  String path;
+  std::string path;
 
   FileSizeSensor() = default;
-  FileSizeSensor(sensor::Sensor *, String const &path);
+  FileSizeSensor(sensor::Sensor *, std::string const &path);
 };
 #endif
 
@@ -52,24 +52,24 @@ class SdMmc : public Component {
   void write_file(const char *path, const uint8_t *buffer, size_t length);
   void append_file(const char *path, const uint8_t *buffer, size_t length);
   bool delete_file(const char *path);
-  bool delete_file(String const &path);
+  bool delete_file(const std::string &path);
   bool create_directory(const char *path);
   bool remove_directory(const char *path);
   std::vector<uint8_t> read_file(char const *path);
-  std::vector<uint8_t> read_file(String const &path);
+  std::vector<uint8_t> read_file(const std::string &path);
   size_t read_file_chunk(const char *path, size_t offset, uint8_t *buffer, size_t length);
-  size_t read_file_chunk(const String &path, size_t offset, uint8_t *buffer, size_t length);
+  size_t read_file_chunk(const std::string &path, size_t offset, uint8_t *buffer, size_t length);
   bool is_directory(const char *path);
-  bool is_directory(String const &path);
-  std::vector<String> list_directory(const char *path, uint8_t depth);
-  std::vector<String> list_directory(String path, uint8_t depth);
+  bool is_directory(const std::string &path);
+  std::vector<std::string> list_directory(const char *path, uint8_t depth);
+  std::vector<std::string> list_directory(const std::string &path, uint8_t depth);
   std::vector<storage::FileInfo> list_directory_file_info(const char *path, uint8_t depth);
-  std::vector<storage::FileInfo> list_directory_file_info(String path, uint8_t depth);
-  storage::FileInfo file_info(String path);
+  std::vector<storage::FileInfo> list_directory_file_info(const std::string &path, uint8_t depth);
+  storage::FileInfo file_info(const std::string &path);
   size_t file_size(const char *path);
-  size_t file_size(String const &path);
+  size_t file_size(const std::string &path);
 #ifdef USE_SENSOR
-  void add_file_size_sensor(sensor::Sensor *, String const &path);
+  void add_file_size_sensor(sensor::Sensor *, const std::string &path);
 #endif
 
   void set_clk_pin(uint8_t);
@@ -91,7 +91,7 @@ class SdMmc : public Component {
   uint8_t data3_pin_;
   bool mode_1bit_;
   GPIOPin *power_ctrl_pin_{nullptr};
-  String current_file_;
+  std::string current_file_;
 
 #ifdef USE_ESP_IDF
   sdmmc_card_t *card_;
@@ -101,20 +101,20 @@ class SdMmc : public Component {
 #endif
   void update_sensors();
 #ifdef USE_ESP32_FRAMEWORK_ARDUINO
-  String sd_card_type_to_string(int) const;
+  std::string sd_card_type_to_string(int) const;
 #endif
 #ifdef USE_ESP_IDF
-  String sd_card_type() const;
+  std::string sd_card_type() const;
 #endif
   std::vector<storage::FileInfo> &list_directory_file_info_rec(const char *path, uint8_t depth,
                                                                std::vector<storage::FileInfo> &list);
-  static String error_code_to_string(ErrorCode);
+  static std::string error_code_to_string(ErrorCode);
 };
 
 template<typename... Ts> class SdMmcWriteFileAction : public Action<Ts...> {
  public:
   SdMmcWriteFileAction(SdMmc *parent) : parent_(parent) {}
-  TEMPLATABLE_VALUE(String, path)
+  TEMPLATABLE_VALUE(std::string, path)
   TEMPLATABLE_VALUE(std::vector<uint8_t>, data)
 
   void play(Ts... x) {
@@ -130,7 +130,7 @@ template<typename... Ts> class SdMmcWriteFileAction : public Action<Ts...> {
 template<typename... Ts> class SdMmcAppendFileAction : public Action<Ts...> {
  public:
   SdMmcAppendFileAction(SdMmc *parent) : parent_(parent) {}
-  TEMPLATABLE_VALUE(String, path)
+  TEMPLATABLE_VALUE(std::string, path)
   TEMPLATABLE_VALUE(std::vector<uint8_t>, data)
 
   void play(Ts... x) {
@@ -146,7 +146,7 @@ template<typename... Ts> class SdMmcAppendFileAction : public Action<Ts...> {
 template<typename... Ts> class SdMmcCreateDirectoryAction : public Action<Ts...> {
  public:
   SdMmcCreateDirectoryAction(SdMmc *parent) : parent_(parent) {}
-  TEMPLATABLE_VALUE(String, path)
+  TEMPLATABLE_VALUE(std::string, path)
 
   void play(Ts... x) {
     auto path = this->path_.value(x...);
@@ -160,7 +160,7 @@ template<typename... Ts> class SdMmcCreateDirectoryAction : public Action<Ts...>
 template<typename... Ts> class SdMmcRemoveDirectoryAction : public Action<Ts...> {
  public:
   SdMmcRemoveDirectoryAction(SdMmc *parent) : parent_(parent) {}
-  TEMPLATABLE_VALUE(String, path)
+  TEMPLATABLE_VALUE(std::string, path)
 
   void play(Ts... x) {
     auto path = this->path_.value(x...);
@@ -174,7 +174,7 @@ template<typename... Ts> class SdMmcRemoveDirectoryAction : public Action<Ts...>
 template<typename... Ts> class SdMmcDeleteFileAction : public Action<Ts...> {
  public:
   SdMmcDeleteFileAction(SdMmc *parent) : parent_(parent) {}
-  TEMPLATABLE_VALUE(String, path)
+  TEMPLATABLE_VALUE(std::string, path)
 
   void play(Ts... x) {
     auto path = this->path_.value(x...);
@@ -186,9 +186,9 @@ template<typename... Ts> class SdMmcDeleteFileAction : public Action<Ts...> {
 };
 
 long double convertBytes(uint64_t, MemoryUnits);
-String memory_unit_to_string(MemoryUnits);
+std::string memory_unit_to_string(MemoryUnits);
 MemoryUnits memory_unit_from_size(size_t);
-String format_size(size_t);
+std::string format_size(size_t);
 
 }  // namespace sd_mmc
 }  // namespace esphome
