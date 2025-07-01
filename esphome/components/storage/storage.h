@@ -14,6 +14,7 @@ struct FileInfo {
   bool is_directory;
   size_t read_offset;
   FileInfo(std::string const &path, size_t size, bool is_directory);
+  FileInfo();
 };
 
 class Storage : public EntityBase {

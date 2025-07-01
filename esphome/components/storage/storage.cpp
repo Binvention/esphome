@@ -14,6 +14,8 @@ FileInfo::FileInfo(std::string const &path, size_t size, bool is_directory)
   this->read_offset = 0;
 }
 
+FileInfo::FileInfo() : path(), size(), is_directory() { this->read_offset = 0; }
+
 std::vector<FileInfo> Storage::list_directory(const std::string &path) { return this->direct_list_directory(path); }
 
 FileInfo Storage::get_file_info(const std::string &path) { return this->direct_get_file_info(path); }
