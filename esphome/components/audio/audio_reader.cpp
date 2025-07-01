@@ -5,6 +5,7 @@
 #include "esphome/core/defines.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
+#include "esphome/core/log.h"
 
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
@@ -15,7 +16,7 @@ namespace audio {
 
 static const uint32_t READ_WRITE_TIMEOUT_MS = 20;
 
-AudioReader::~AudioReader() { this->cleanup_connection_(); }
+AudioReader::~AudioReader() {}
 
 esp_err_t AudioReader::add_sink(const std::weak_ptr<RingBuffer> &output_ring_buffer) {
   // we'll leave buffering to the storage and audio components
@@ -54,7 +55,7 @@ AudioFileType AudioReader::get_audio_type(const char *content_type) {
 AudioReaderState AudioReader::read() {
   uint8_t temp[4];
   int num_bytes;
-  int available = this->file_ring_buffer_->get_free_space();
+  int available = this->file_ring_buffer_->available();
   do {
     num_bytes = this->storage_client_->read_array(&(temp[0]), 4);
     available -= num_bytes;
