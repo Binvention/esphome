@@ -66,7 +66,8 @@ AudioReaderState AudioReader::read() {
         ESP_LOGE("Audio Reader", "error occurred while writing to file buffer");
       }
     }
-  } while (num_bytes != 0 && available >= 4) if (num_bytes) {
+  } while (num_bytes != 0 && available >= 4);
+  if (num_bytes) {
     return AudioReaderState::READING;
   }
   return AudioReaderState::FINISHED;
