@@ -24,7 +24,7 @@ esp_err_t AudioReader::add_sink(const std::weak_ptr<RingBuffer> &output_ring_buf
   return ESP_OK;
 }
 
-esp_err_t AudioReader::start(const std::string &uri, AudioFileType file_type) {
+esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
   if (uri.empty()) {
     return ESP_ERR_INVALID_ARG;
   }
@@ -57,7 +57,7 @@ AudioReaderState AudioReader::read() {
   int num_bytes;
   int available = this->file_ring_buffer_->available();
   do {
-    num_bytes = this->storage_client_->read_array(&(temp[0]), 4);
+    num_bytes = this->storage_client_.read_array(&(temp[0]), 4);
     available -= num_bytes;
     if (num_bytes) {
       size_t bytes_written =
