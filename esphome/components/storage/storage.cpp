@@ -93,13 +93,13 @@ std::vector<FileInfo> StorageClient::list_directory(const std::string &path) {
   int prefix_end = path.find("://");
   if (prefix_end < 0) {
     ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
-    return;
+    return std::vector<FileInfo>();
   }
   std::string prefix = path.substr(0, prefix_end);
   auto nstorage = storages.find(prefix);
   if (nstorage == storages.end()) {
     ESP_LOGE(TAG, "storage prefix does not exist");
-    return;
+    return std::vector<FileInfo>();
   }
   std::vector<FileInfo> result = nstorage->second->list_directory(path.substr(prefix_end + 3));
   for (auto i = result.begin(); i != result.end(); i++) {
@@ -112,13 +112,13 @@ FileInfo StorageClient::get_file_info(const std::string &path) {
   int prefix_end = path.find("://");
   if (prefix_end < 0) {
     ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
-    return;
+    return FileInfo();
   }
   std::string prefix = path.substr(0, prefix_end);
   auto nstorage = storages.find(prefix);
   if (nstorage == storages.end()) {
     ESP_LOGE(TAG, "storage prefix does not exist");
-    return;
+    return FileInfo();
   }
   FileInfo result = nstorage->second->get_file_info(path.substr(prefix_end + 3));
   result.path = prefix + "://" + result.path;
