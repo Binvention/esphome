@@ -5,7 +5,7 @@ namespace sd_mmc_storage {
 
 static const char *TAG = "SD_MMC_STORAGE";
 
-uint8_t sd_mmc_storage::direct_read_byte(size_t offset) {
+uint8_t SD_MMC_Storage::direct_read_byte(size_t offset) {
   if (this->current_file_.is_directory) {
     ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
     return 0;
@@ -21,7 +21,7 @@ uint8_t sd_mmc_storage::direct_read_byte(size_t offset) {
   return 0;
 }
 
-size_t sd_mmc_storage::direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length) {
+size_t SD_MMC_Storage::direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length) {
   if (this->current_file_.is_directory) {
     ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
     return 0;
@@ -33,7 +33,7 @@ size_t sd_mmc_storage::direct_read_byte_array(size_t offset, uint8_t *data, size
   return 0;
 }
 
-bool sd_mmc_storage::direct_write_byte(uint8_t data) {
+bool SD_MMC_Storage::direct_write_byte(uint8_t data) {
   if (this->current_file_.is_directory) {
     ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
     return false;
@@ -45,7 +45,7 @@ bool sd_mmc_storage::direct_write_byte(uint8_t data) {
   return false;
 }
 
-bool sd_mmc_storage::direct_write_byte_array(uint8_t *data, size_t data_length) {
+bool SD_MMC_Storage::direct_write_byte_array(uint8_t *data, size_t data_length) {
   if (this->current_file_.is_directory) {
     ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
     return false;
@@ -57,7 +57,7 @@ bool sd_mmc_storage::direct_write_byte_array(uint8_t *data, size_t data_length) 
   return false;
 }
 
-bool sd_mmc_storage::direct_append_byte(uint8_t data) {
+bool SD_MMC_Storage::direct_append_byte(uint8_t data) {
   if (this->current_file_.is_directory) {
     ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
     return false;
@@ -69,7 +69,7 @@ bool sd_mmc_storage::direct_append_byte(uint8_t data) {
   return false;
 }
 
-bool sd_mmc_storage::direct_append_byte_array(uint8_t *data, size_t data_length) {
+bool SD_MMC_Storage::direct_append_byte_array(uint8_t *data, size_t data_length) {
   if (this->current_file_.is_directory) {
     ESP_LOGE(TAG, "file %s is a directory", this->current_file_);
     return false;
@@ -81,21 +81,21 @@ bool sd_mmc_storage::direct_append_byte_array(uint8_t *data, size_t data_length)
   return false;
 }
 
-void sd_mmc_storage::direct_set_file(const std::string &path) {
+void SD_MMC_Storage::direct_set_file(const std::string &path) {
   if (this->current_file_.is_directory) {
     ESP_LOGE(TAG, "File %s is actually a directory", this->current_file_.path);
     return;
   }
 }
 
-storage::FileInfo sd_mmc_storage::direct_get_file_info(const std::string &path) {
+storage::FileInfo SD_MMC_Storage::direct_get_file_info(const std::string &path) {
   if (this->sd_ref_ != nullptr) {
     return this->sd_ref_->file_info(path);
   }
   return storage::FileInfo("", 0, false);
 }
 
-std::vector<storage::FileInfo> sd_mmc_storage::direct_list_directory(const std::string &path) {
+std::vector<storage::FileInfo> SD_MMC_Storage::direct_list_directory(const std::string &path) {
   if (this->sd_ref_ != nullptr) {
     return this->sd_ref_->list_directory_file_info(path, 0);
   }
