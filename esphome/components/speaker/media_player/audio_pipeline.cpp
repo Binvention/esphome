@@ -362,11 +362,7 @@ void AudioPipeline::read_task(void *params) {
       std::unique_ptr<audio::AudioReader> reader =
           make_unique<audio::AudioReader>(this_pipeline->transfer_buffer_size_);
 
-      if (event_bits & EventGroupBits::READER_COMMAND_INIT_FILE) {
-        err = reader->start(this_pipeline->current_audio_file_, this_pipeline->current_audio_file_type_);
-      } else {
-        err = reader->start(this_pipeline->current_uri_, this_pipeline->current_audio_file_type_);
-      }
+      err = reader->start(this_pipeline->current_uri_, this_pipeline->current_audio_file_type_);
 
       if (err == ESP_OK) {
         size_t file_ring_buffer_size = this_pipeline->buffer_size_;
