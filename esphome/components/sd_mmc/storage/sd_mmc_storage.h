@@ -7,7 +7,7 @@
 namespace esphome {
 namespace sd_mmc_storage {
 
-class sd_mmc_storage : public storage::Storage, Component {
+class SD_MMC_Storage : public storage::Storage, Component {
  public:
   uint8_t direct_read_byte(size_t offset);
   bool direct_write_byte(uint8_t data);
