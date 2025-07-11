@@ -29,7 +29,7 @@ esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
     return ESP_ERR_INVALID_ARG;
   }
   storage_client_.set_file(uri);
-  this->audio_file_type = file_type;
+  this->audio_file_type_ = file_type;
 
   return ESP_OK;
 }
