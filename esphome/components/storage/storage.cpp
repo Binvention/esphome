@@ -145,7 +145,7 @@ void StorageClient::set_file(const std::string &path) {
 uint8_t StorageClient::read() {
   if (this->current_storage_) {
     this->current_storage_->set_file(&(this->current_file_));
-    uint8_t result = current_storage_->read();
+    return current_storage_->read();
   } else {
     ESP_LOGE(TAG, "File has not been set");
     return 0;
