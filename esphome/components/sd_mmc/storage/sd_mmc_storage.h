@@ -5,7 +5,7 @@
 #include "esphome/components/sd_mmc/sd_mmc.h"
 
 namespace esphome {
-namespace sd_mmc_storage {
+namespace sd_mmc {
 
 class SD_MMC_Storage : public storage::Storage, Component {
  public:
@@ -21,9 +21,9 @@ class SD_MMC_Storage : public storage::Storage, Component {
   void set_sd_mmc(sd_mmc::SdMmc *value) { this->sd_ref_ = value; };
 
  protected:
-  sd_mmc::SdMmc *sd_ref_;
+  SdMmc *sd_ref_;
   storage::FileInfo current_file_;
 };
 
-}  // namespace sd_mmc_storage
+}  // namespace sd_mmc
 }  // namespace esphome

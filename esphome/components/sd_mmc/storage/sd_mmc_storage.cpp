@@ -1,7 +1,7 @@
 #include "sd_mmc_storage.h"
 
 namespace esphome {
-namespace sd_mmc_storage {
+namespace sd_mmc {
 
 static const char *TAG = "SD_MMC_STORAGE";
 
@@ -102,5 +102,5 @@ std::vector<storage::FileInfo> SD_MMC_Storage::direct_list_directory(const std::
   return std::vector<storage::FileInfo>();
 }
 
-}  // namespace sd_mmc_storage
+}  // namespace sd_mmc
 }  // namespace esphome
