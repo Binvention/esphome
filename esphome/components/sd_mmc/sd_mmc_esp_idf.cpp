@@ -163,7 +163,7 @@ size_t SdMmc::read_file_chunk(const char *path, size_t offset, uint8_t *buffer, 
     return 0;
   }
 
-  if (fseek(file, offset)) {
+  if (fseek(file, offset, SEEK_SET)) {
     return 0;
   }
   size_t result = fread(buffer, 1, length, file);
