@@ -32,4 +32,4 @@ def storage_schema(
 async def storage_to_code(config):
     storage = await cg.get_variable(config[CONF_ID])
     prefix = config[CONF_PREFIX]
-    cg.add(f"StorageClient::add_storage({storage}, {prefix});")
+    cg.add(storage.register_storage(prefix))
