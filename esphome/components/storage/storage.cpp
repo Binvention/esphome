@@ -212,6 +212,8 @@ bool StorageClient::append_array(uint8_t *data, size_t data_length) {
   }
 }
 
+std::map<std::string, Storage *> StorageClient::storages = {};
+
 void StorageClient::add_storage(Storage *storage_inst, std::string prefix) {
   StorageClient::storages[prefix] = storage_inst;
 }
