@@ -20,10 +20,6 @@
 #include "lwip/dns.h"
 #include "lwip/err.h"
 
-#ifdef CONFIG_LWIP_TCPIP_CORE_LOCKING
-#include "lwip/priv/tcpip_priv.h"
-#endif
-
 #include "esphome/core/application.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
@@ -295,25 +291,16 @@ bool WiFiComponent::wifi_sta_ip_config_(optional<ManualIP> manual_ip) {
   }
 
   if (!manual_ip.has_value()) {
-// sntp_servermode_dhcp lwip/sntp.c (Required to lock TCPIP core functionality!)
-// https://github.com/esphome/issues/issues/6591
-// https://github.com/espressif/arduino-esp32/issues/10526
-#ifdef CONFIG_LWIP_TCPIP_CORE_LOCKING
-    if (!sys_thread_tcpip(LWIP_CORE_LOCK_QUERY_HOLDER)) {
-      LOCK_TCPIP_CORE();
+    // sntp_servermode_dhcp lwip/sntp.c (Required to lock TCPIP core functionality!)
+    // https://github.com/esphome/issues/issues/6591
+    // https://github.com/espressif/arduino-esp32/issues/10526
+    {
+      LwIPLock lock;
+      // lwIP starts the SNTP client if it gets an SNTP server from DHCP. We don't need the time, and more importantly,
+      // the built-in SNTP client has a memory leak in certain situations. Disable this feature.
+      // https://github.com/esphome/issues/issues/2299
+      sntp_servermode_dhcp(false);
     }
-#endif
-
-    // lwIP starts the SNTP client if it gets an SNTP server from DHCP. We don't need the time, and more importantly,
-    // the built-in SNTP client has a memory leak in certain situations. Disable this feature.
-    // https://github.com/esphome/issues/issues/2299
-    sntp_servermode_dhcp(false);
-
-#ifdef CONFIG_LWIP_TCPIP_CORE_LOCKING
-    if (sys_thread_tcpip(LWIP_CORE_LOCK_QUERY_HOLDER)) {
-      UNLOCK_TCPIP_CORE();
-    }
-#endif
 
     // No manual IP is set; use DHCP client
     if (dhcp_status != ESP_NETIF_DHCP_STARTED) {
@@ -550,7 +537,7 @@ void WiFiComponent::wifi_event_callback_(esphome_wifi_event_id_t event, esphome_
       memcpy(buf, it.ssid, it.ssid_len);
       buf[it.ssid_len] = '\0';
       ESP_LOGV(TAG, "Connected ssid='%s' bssid=" LOG_SECRET("%s") " channel=%u, authmode=%s", buf,
-               format_mac_addr(it.bssid).c_str(), it.channel, get_auth_mode_str(it.authmode));
+               format_mac_address_pretty(it.bssid).c_str(), it.channel, get_auth_mode_str(it.authmode));
 #if USE_NETWORK_IPV6
       this->set_timeout(100, [] { WiFi.enableIPv6(); });
 #endif /* USE_NETWORK_IPV6 */
@@ -566,7 +553,7 @@ void WiFiComponent::wifi_event_callback_(esphome_wifi_event_id_t event, esphome_
         ESP_LOGW(TAG, "Disconnected ssid='%s' reason='Probe Request Unsuccessful'", buf);
       } else {
         ESP_LOGW(TAG, "Disconnected ssid='%s' bssid=" LOG_SECRET("%s") " reason='%s'", buf,
-                 format_mac_addr(it.bssid).c_str(), get_disconnect_reason_str(it.reason));
+                 format_mac_address_pretty(it.bssid).c_str(), get_disconnect_reason_str(it.reason));
       }
 
       uint8_t reason = it.reason;
@@ -636,13 +623,13 @@ void WiFiComponent::wifi_event_callback_(esphome_wifi_event_id_t event, esphome_
     case ESPHOME_EVENT_ID_WIFI_AP_STACONNECTED: {
       auto it = info.wifi_sta_connected;
       auto &mac = it.bssid;
-      ESP_LOGV(TAG, "AP client connected MAC=%s", format_mac_addr(mac).c_str());
+      ESP_LOGV(TAG, "AP client connected MAC=%s", format_mac_address_pretty(mac).c_str());
       break;
     }
     case ESPHOME_EVENT_ID_WIFI_AP_STADISCONNECTED: {
       auto it = info.wifi_sta_disconnected;
       auto &mac = it.bssid;
-      ESP_LOGV(TAG, "AP client disconnected MAC=%s", format_mac_addr(mac).c_str());
+      ESP_LOGV(TAG, "AP client disconnected MAC=%s", format_mac_address_pretty(mac).c_str());
       break;
     }
     case ESPHOME_EVENT_ID_WIFI_AP_STAIPASSIGNED: {
@@ -651,7 +638,7 @@ void WiFiComponent::wifi_event_callback_(esphome_wifi_event_id_t event, esphome_
     }
     case ESPHOME_EVENT_ID_WIFI_AP_PROBEREQRECVED: {
       auto it = info.wifi_ap_probereqrecved;
-      ESP_LOGVV(TAG, "AP receive Probe Request MAC=%s RSSI=%d", format_mac_addr(it.mac).c_str(), it.rssi);
+      ESP_LOGVV(TAG, "AP receive Probe Request MAC=%s RSSI=%d", format_mac_address_pretty(it.mac).c_str(), it.rssi);
       break;
     }
     default:
