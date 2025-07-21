@@ -98,7 +98,7 @@ std::vector<FileInfo> StorageClient::list_directory(const std::string &path) {
   std::string prefix = path.substr(0, prefix_end);
   auto nstorage = storages.find(prefix);
   if (nstorage == storages.end()) {
-    ESP_LOGE(TAG, "storage prefix does not exist");
+    ESP_LOGE(TAG, "storage %s prefix does not exist", prefix);
     return std::vector<FileInfo>();
   }
   std::vector<FileInfo> result = nstorage->second->list_directory(path.substr(prefix_end + 3));
@@ -117,7 +117,7 @@ FileInfo StorageClient::get_file_info(const std::string &path) {
   std::string prefix = path.substr(0, prefix_end);
   auto nstorage = storages.find(prefix);
   if (nstorage == storages.end()) {
-    ESP_LOGE(TAG, "storage prefix does not exist");
+    ESP_LOGE(TAG, "storage %s prefix does not exist", prefix);
     return FileInfo();
   }
   FileInfo result = nstorage->second->get_file_info(path.substr(prefix_end + 3));
@@ -134,7 +134,7 @@ void StorageClient::set_file(const std::string &path) {
   std::string prefix = path.substr(0, prefix_end);
   auto nstorage = storages.find(prefix);
   if (nstorage == storages.end()) {
-    ESP_LOGE(TAG, "storage prefix does not exist");
+    ESP_LOGE(TAG, "storage %s prefix does not exist", prefix);
     return;
   }
   this->current_storage_ = nstorage->second;
