@@ -20,8 +20,6 @@ std::vector<FileInfo> Storage::list_directory(const std::string &path) { return 
 
 FileInfo Storage::get_file_info(const std::string &path) { return this->direct_get_file_info(path); }
 
-void Storage::register_storage(std::string const &prefix) { StorageClient::add_storage(this, prefix); }
-
 void Storage::set_file(FileInfo *file) {
   if (this->current_file_ != file) {
     this->current_file_ = file;
