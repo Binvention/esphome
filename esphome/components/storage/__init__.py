@@ -6,6 +6,7 @@ from esphome.cpp_generator import MockObjClass
 storage_ns = cg.esphome_ns.namespace("storage")
 Storage = storage_ns.class_("Storage", cg.EntityBase)
 StorageClient = storage_ns.class_("StorageClient", cg.EntityBase)
+StorageClientStatic = storage_ns.MockObj("StorageClient", "::")
 
 IS_PLATFORM_COMPONENT = True
 
@@ -32,4 +33,4 @@ def storage_schema(
 async def storage_to_code(config):
     storage = await cg.get_variable(config[CONF_ID])
     prefix = config[CONF_PREFIX]
-    cg.add(storage.register_storage(prefix))
+    cg.add(StorageClientStatic.add_storage(storage, prefix))

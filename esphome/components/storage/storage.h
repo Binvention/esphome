@@ -42,8 +42,6 @@ class Storage : public EntityBase {
   // uint32_t get_buffer_size();
   // void write_on_shutdown(bool value);
 
-  void register_storage(std::string const &prefix);
-
  protected:
   virtual void direct_set_file(const std::string &file);
   virtual FileInfo direct_get_file_info(const std::string &path);
