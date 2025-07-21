@@ -6,7 +6,7 @@ from esphome.cpp_generator import MockObjClass
 storage_ns = cg.esphome_ns.namespace("storage")
 Storage = storage_ns.class_("Storage", cg.EntityBase)
 StorageClient = storage_ns.class_("StorageClient", cg.EntityBase)
-StorageClientStatic = storage_ns.MockObj("StorageClient", "::")
+StorageClientStatic = storage_ns.namespace("StorageClient")
 
 IS_PLATFORM_COMPONENT = True
 
