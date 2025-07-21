@@ -20,12 +20,12 @@ struct FileInfo {
 class Storage : public EntityBase {
  public:
   // direct functions
-  virtual uint8_t direct_read_byte(size_t offset);
-  virtual bool direct_write_byte(uint8_t data);
-  virtual bool direct_append_byte(uint8_t data);
-  virtual size_t direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length);
-  virtual bool direct_write_byte_array(uint8_t *data, size_t data_length);
-  virtual bool direct_append_byte_array(uint8_t *data, size_t data_length);
+  virtual uint8_t direct_read_byte(size_t offset) = 0;
+  virtual bool direct_write_byte(uint8_t data) = 0;
+  virtual bool direct_append_byte(uint8_t data) = 0;
+  virtual size_t direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length) = 0;
+  virtual bool direct_write_byte_array(uint8_t *data, size_t data_length) = 0;
+  virtual bool direct_append_byte_array(uint8_t *data, size_t data_length) = 0;
   std::vector<FileInfo> list_directory(const std::string &path);
   FileInfo get_file_info(const std::string &path);
   void set_file(FileInfo *file);
