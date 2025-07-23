@@ -86,6 +86,7 @@ void SD_MMC_Storage::direct_set_file(const std::string &path) {
     ESP_LOGE(TAG, "File %s is actually a directory", this->current_file_.path);
     return;
   }
+  this->current_file_ = direct_get_file_info(path);
 }
 
 storage::FileInfo SD_MMC_Storage::direct_get_file_info(const std::string &path) {
