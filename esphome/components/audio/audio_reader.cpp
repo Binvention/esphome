@@ -31,7 +31,7 @@ esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
   storage_client_.set_file(uri);
   auto file_info = storage_client_.get_file_info(uri);
   ESP_LOGVV("AudioReader", "Starting to play file %s of size %0d", file_info.path.c_str(), file_info.size);
-  if (file_type == AudioFileType::NONE) {
+  if (!file_type || file_type == AudioFileType::NONE) {
     if (uri.find(".wav") > 0) {
       this->audio_file_type_ = AudioFileType::WAV;
       file_type = AudioFileType::WAV;
@@ -59,6 +59,8 @@ esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
       case AudioFileType::MP3:
         ESP_LOGVV("AudioReader", "Using File Type MP3");
         break;
+      default:
+        ESP_LOGE("AudioReader", "Undefined audio file type");
     }
     this->audio_file_type_ = file_type;
   }
