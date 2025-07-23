@@ -31,17 +31,17 @@ esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
   storage_client_.set_file(uri);
   auto file_info = storage_client_.get_file_info(uri);
   ESP_LOGVV("AudioReader", "Starting to play file %s of size %0d", file_info.path.c_str(), file_info.size);
-  if (file_type == NONE) {
+  if (file_type == AudioFileType::NONE) {
     if (uri.find(".wav") > 0) {
-      this->audio_file_type_ = WAV;
-      file_type = WAV;
+      this->audio_file_type_ = AudioFileType::WAV;
+      file_type = AudioFileType::WAV;
     } else if (uri.find(".flac") > 0) {
-      this->audio_file_type_ = FLAC;
-      file_type = FLAC;
+      this->audio_file_type_ = AudioFileType::FLAC;
+      file_type = AudioFileType::FLAC;
 
     } else if (uri.find(".mp3") > 0) {
-      this->audio_file_type_ = MP3;
-      file_type = MP3;
+      this->audio_file_type_ = AudioFileType::MP3;
+      file_type = AudioFileType::MP3;
     }
   } else {
     this->audio_file_type_ = file_type;
