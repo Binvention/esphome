@@ -35,13 +35,16 @@ esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
     if (uri.find(".wav") > 0) {
       this->audio_file_type_ = AudioFileType::WAV;
       file_type = AudioFileType::WAV;
+      ESP_LOGVV("AudioReader", "File Type Detected WAV");
     } else if (uri.find(".flac") > 0) {
       this->audio_file_type_ = AudioFileType::FLAC;
+      ESP_LOGVV("AudioReader", "File Type Detected FLAC");
       file_type = AudioFileType::FLAC;
 
     } else if (uri.find(".mp3") > 0) {
       this->audio_file_type_ = AudioFileType::MP3;
       file_type = AudioFileType::MP3;
+      ESP_LOGVV("AudioReader", "File Type Detected MP3");
     }
   } else {
     this->audio_file_type_ = file_type;
