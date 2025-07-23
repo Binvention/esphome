@@ -30,7 +30,7 @@ esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
   }
   storage_client_.set_file(uri);
   auto file_info = storage_client_.get_file_info(uri);
-  ESP_LOGVV("AudioReader", "Starting to play file %s of size %0d",file_info.path, file_info.size);
+  ESP_LOGVV("AudioReader", "Starting to play file %s of size %0d", file_info.path.c_str(), file_info.size);
   this->audio_file_type_ = file_type;
 
   return ESP_OK;
