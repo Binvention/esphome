@@ -140,7 +140,7 @@ void StorageClient::set_file(const std::string &path) {
   this->current_storage_ = nstorage->second;
   this->current_file_ = this->current_storage_->get_file_info(path.substr(prefix_end + 3));
   this->current_storage_->set_file(&(this->current_file_));
-  ESP_LOGVV(TAG, "Current File Set to %s", this->current_file_.path);
+  ESP_LOGVV(TAG, "Current File Set to %s", this->current_file_.path.c_str());
 }
 
 uint8_t StorageClient::read() {
