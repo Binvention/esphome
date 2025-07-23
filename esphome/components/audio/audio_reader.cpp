@@ -29,7 +29,7 @@ esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
     return ESP_ERR_INVALID_ARG;
   }
   storage_client_.set_file(uri);
-  ESP_LOGVV("AudioReader", "Starting to play file %s of size %0d", storage_client_.current_file.path, storage_client_.current_file.size);
+  ESP_LOGVV("AudioReader", "Starting to play file %s of size %0d", storage_client_.current_file_.path, storage_client_.current_file_.size);
   this->audio_file_type_ = file_type;
 
   return ESP_OK;
