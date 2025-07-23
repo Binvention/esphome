@@ -45,8 +45,21 @@ esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
       this->audio_file_type_ = AudioFileType::MP3;
       file_type = AudioFileType::MP3;
       ESP_LOGVV("AudioReader", "File Type Detected MP3");
+    } else {
+      ESP_LOGE("AudioReader", "Unable to determine file type");
     }
   } else {
+    switch (file_type) {
+      case AudioFileType::WAV:
+        ESP_LOGVV("AudioReader", "Using File Type WAV");
+        break;
+      case AudioFileType::FLAC:
+        ESP_LOGVV("AudioReader", "Using File Type FLAC");
+        break;
+      case AudioFileType::MP3:
+        ESP_LOGVV("AudioReader", "Using File Type MP3");
+        break;
+    }
     this->audio_file_type_ = file_type;
   }
 
