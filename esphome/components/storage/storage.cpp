@@ -145,6 +145,7 @@ void StorageClient::set_file(const std::string &path) {
 
 uint8_t StorageClient::read() {
   if (this->current_storage_) {
+    ESP_LOGVV(TAG, "Reading File: %s", this->current_file_.path.c_str());
     this->current_storage_->set_file(&(this->current_file_));
     return current_storage_->read();
   } else {
@@ -183,6 +184,7 @@ bool StorageClient::append(uint8_t data) {
 
 size_t StorageClient::read_array(uint8_t *data, size_t data_length) {
   if (current_storage_) {
+    ESP_LOGVV(TAG, "Reading File: %s", this->current_file_.path.c_str());
     this->current_storage_->set_file(&(this->current_file_));
     return current_storage_->read_array(data, data_length);
   } else {
