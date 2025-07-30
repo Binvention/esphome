@@ -15,6 +15,7 @@ namespace esphome {
 namespace audio {
 
 static const uint32_t READ_WRITE_TIMEOUT_MS = 20;
+static const size_t TEMP_BUFFER_SIZE = 50;
 
 AudioReader::~AudioReader() {}
 
@@ -71,11 +72,11 @@ AudioFileType AudioReader::get_audio_type(const char *content_type) {
 }
 
 AudioReaderState AudioReader::read() {
-  uint8_t temp[4];
+  uint8_t temp[TEMP_BUFFER_SIZE];
   int num_bytes;
   int available = this->file_ring_buffer_->available();
   do {
-    num_bytes = this->storage_client_.read_array(&(temp[0]), 4);
+    num_bytes = this->storage_client_.read_array(&(temp[0]), TEMP_BUFFER_SIZE);
     available -= num_bytes;
     if (num_bytes) {
       size_t bytes_written =
@@ -84,7 +85,7 @@ AudioReaderState AudioReader::read() {
         ESP_LOGE("Audio Reader", "error occurred while writing to file buffer");
       }
     }
-  } while (num_bytes != 0 && available >= 4);
+  } while (num_bytes != 0 && available >= TEMP_BUFFER_SIZE);
   if (num_bytes) {
     return AudioReaderState::READING;
   }
