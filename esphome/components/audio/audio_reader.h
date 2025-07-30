@@ -50,7 +50,7 @@ class AudioReader {
   AudioReaderState read();
 
  protected:
-  std::unique_ptr<storage::StorageClient> storage_client_;
+  storage::StorageClient storage_client_;
 
   /// @brief Determines the audio file type from the http header's Content-Type key
   /// @param content_type string with the Content-Type key
