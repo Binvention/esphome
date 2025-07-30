@@ -94,6 +94,7 @@ AudioReaderState AudioReader::read() {
       }
     } while (num_bytes != 0 && available >= TEMP_BUFFER_SIZE);
   } else {
+    ESP_LOGW("Audio Reader", "No Space available in ring buffer");
     return AudioReaderState::READING;
   }
   if (num_bytes) {
