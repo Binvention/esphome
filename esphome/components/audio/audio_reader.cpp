@@ -75,28 +75,22 @@ AudioReaderState AudioReader::read() {
   uint8_t temp[TEMP_BUFFER_SIZE];
   int num_bytes;
   int available = this->file_ring_buffer_->available();
-  if (available > 0) {
-    do {
-      if (available >= TEMP_BUFFER_SIZE) {
-        num_bytes = this->storage_client_.read_array(&(temp[0]), TEMP_BUFFER_SIZE);
-      } else {
-        num_bytes = this->storage_client_.read_array(&(temp[0]), available);
+  do {
+    if (available >= TEMP_BUFFER_SIZE) {
+      num_bytes = this->storage_client_.read_array(&(temp[0]), TEMP_BUFFER_SIZE);
+    } else {
+      num_bytes = this->storage_client_.read_array(&(temp[0]), available ? available : 10);
+    }
+    available -= num_bytes;
+    if (num_bytes) {
+      size_t bytes_written =
+          this->file_ring_buffer_->write_without_replacement(temp, num_bytes, pdMS_TO_TICKS(READ_WRITE_TIMEOUT_MS));
+      if (bytes_written != num_bytes) {
+        ESP_LOGE("Audio Reader", "error occurred while writing to file buffer. Bytes Written %0d. Bytes in buffer %0d",
+                 bytes_written, num_bytes);
       }
-      available -= num_bytes;
-      if (num_bytes) {
-        size_t bytes_written =
-            this->file_ring_buffer_->write_without_replacement(temp, num_bytes, pdMS_TO_TICKS(READ_WRITE_TIMEOUT_MS));
-        if (bytes_written != num_bytes) {
-          ESP_LOGE("Audio Reader",
-                   "error occurred while writing to file buffer. Bytes Written %0d. Bytes in buffer %0d", bytes_written,
-                   num_bytes);
-        }
-      }
-    } while (num_bytes != 0 && available >= TEMP_BUFFER_SIZE);
-  } else {
-    ESP_LOGW("Audio Reader", "No Space available in ring buffer");
-    return AudioReaderState::READING;
-  }
+    }
+  } while (num_bytes != 0 && available >= TEMP_BUFFER_SIZE);
   if (num_bytes) {
     return AudioReaderState::READING;
   }
