@@ -31,7 +31,7 @@ class AudioReader {
   /// @brief Constructs an AudioReader object.
   /// The transfer buffer isn't allocated here, but only if necessary (an http source) in the start function.
   /// @param buffer_size Transfer buffer size in bytes.
-  AudioReader(size_t buffer_size) : buffer_size_(buffer_size) {}
+  AudioReader(size_t buffer_size);
   ~AudioReader();
 
   /// @brief Adds a sink ring buffer for audio data. Takes ownership of the ring buffer in a shared_ptr
@@ -50,7 +50,7 @@ class AudioReader {
   AudioReaderState read();
 
  protected:
-  storage::StorageClient storage_client_;
+  std::unique_ptr<storage::StorageClient> storage_client_;
 
   /// @brief Determines the audio file type from the http header's Content-Type key
   /// @param content_type string with the Content-Type key

@@ -17,6 +17,10 @@ namespace audio {
 static const uint32_t READ_WRITE_TIMEOUT_MS = 20;
 static const size_t TEMP_BUFFER_SIZE = 50;
 
+AudioReader::AudioReader(size_t buffer_size) : buffer_size_(buffer_size) {
+  storage_client_ = make_unique<storage::StorageClient>();
+}
+
 AudioReader::~AudioReader() {}
 
 esp_err_t AudioReader::add_sink(const std::weak_ptr<RingBuffer> &output_ring_buffer) {
@@ -29,8 +33,8 @@ esp_err_t AudioReader::start(const std::string &uri, AudioFileType &file_type) {
   if (uri.empty()) {
     return ESP_ERR_INVALID_ARG;
   }
-  storage_client_.set_file(uri);
-  auto file_info = storage_client_.get_file_info(uri);
+  storage_client_->set_file(uri);
+  auto file_info = storage_client_->get_file_info(uri);
   ESP_LOGVV("AudioReader", "Starting to play file %s of size %0d", file_info.path.c_str(), file_info.size);
 
   if (uri.find(".wav") != std::string::npos) {
@@ -78,9 +82,9 @@ AudioReaderState AudioReader::read() {
   if (available > 0) {
     do {
       if (available >= TEMP_BUFFER_SIZE) {
-        num_bytes = this->storage_client_.read_array(&(temp[0]), TEMP_BUFFER_SIZE);
+        num_bytes = this->storage_client_->read_array(&(temp[0]), TEMP_BUFFER_SIZE);
       } else {
-        num_bytes = this->storage_client_.read_array(&(temp[0]), available);
+        num_bytes = this->storage_client_->read_array(&(temp[0]), available);
       }
       available -= num_bytes;
       if (num_bytes) {
