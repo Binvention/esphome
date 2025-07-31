@@ -280,28 +280,26 @@ void TRF7962A::process_random() {
   if (this->rx_buff_length_ != 3) {
     ESP_LOGV(TAG, "only three items should be in the rx buffer but there are actually %0d items in buffer",
              this->rx_buff_length_);
-    search_tag();
-  } else {
-    this->last_random_[0] = this->rx_buff_[1];
-    this->last_random_[1] = this->rx_buff_[2];
-    ESP_LOGV(TAG, "New random received %x%x", this->last_random_[1], this->last_random_[0]);
-    if (!tag_uid_[0]) {
-      if (this->passwords_.empty()) {
-        ESP_LOGE(TAG, "no passwords provided");
-        search_tag();
-      } else {
-        if (c_password_ != passwords_.end()) {
-          this->ISO15693_unlock_privacy_slix_(*c_password_++);
-        } else {
-          ESP_LOGE(TAG, "No provided passwords worked");
-          c_password_ = passwords_.cbegin();
-          search_tag();
-        }
-      }
-    } else {
-      ESP_LOGE(TAG, "UID already found");
+  }
+  this->last_random_[0] = this->rx_buff_[1];
+  this->last_random_[1] = this->rx_buff_[2];
+  ESP_LOGV(TAG, "New random received %x%x", this->last_random_[1], this->last_random_[0]);
+  if (!tag_uid_[0]) {
+    if (this->passwords_.empty()) {
+      ESP_LOGE(TAG, "no passwords provided");
       search_tag();
+    } else {
+      if (c_password_ != passwords_.end()) {
+        this->ISO15693_unlock_privacy_slix_(*c_password_++);
+      } else {
+        ESP_LOGE(TAG, "No provided passwords worked");
+        c_password_ = passwords_.cbegin();
+        search_tag();
+      }
     }
+  } else {
+    ESP_LOGE(TAG, "UID already found");
+    search_tag();
   }
 }
 
@@ -312,33 +310,33 @@ void TRF7962A::process_uid() {
     for (int i = 0; i < rx_buff_length_; i++) {
       ESP_LOGVV(TAG, "Data %02x", rx_buff_[i]);
     }
-  } else {
-    bool update = false;
-    if (this->tag_uid_[0]) {
-      for (uint8_t i = 0; i < 8; i++) {
-        if (this->tag_uid_[i] != this->rx_buff_[i + 2]) {
-          for (auto *trigger : triggers_ontagremoved_) {
-            trigger->trigger(0);
-          }
-          update = true;
-          break;
+    // assume extra bits are on the end
+  }
+  bool update = false;
+  if (this->tag_uid_[0]) {
+    for (uint8_t i = 0; i < 8; i++) {
+      if (this->tag_uid_[i] != this->rx_buff_[i + 2]) {
+        for (auto *trigger : triggers_ontagremoved_) {
+          trigger->trigger(0);
         }
+        update = true;
+        break;
       }
-    } else {
-      this->is_searching_ = false;
-      update = true;
     }
-    if (update) {
-      uint64_t result = 0;
-      for (uint8_t offset = 0; offset < 8; offset++) {
-        this->tag_uid_[offset] = this->rx_buff_[offset + 2];
-        result |= ((uint64_t) this->tag_uid_[offset]) << (offset * 8);
-      }
-      for (auto *trigger : triggers_ontag_) {
-        trigger->trigger(result);
-      }
-      ESP_LOGD(TAG, "Tag UID: %llx", result);
+  } else {
+    this->is_searching_ = false;
+    update = true;
+  }
+  if (update) {
+    uint64_t result = 0;
+    for (uint8_t offset = 0; offset < 8; offset++) {
+      this->tag_uid_[offset] = this->rx_buff_[offset + 2];
+      result |= ((uint64_t) this->tag_uid_[offset]) << (offset * 8);
     }
+    for (auto *trigger : triggers_ontag_) {
+      trigger->trigger(result);
+    }
+    ESP_LOGD(TAG, "Tag UID: %llx", result);
   }
   search_tag();
 }
