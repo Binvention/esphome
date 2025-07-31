@@ -4,7 +4,7 @@
 #include "esphome/components/storage/storage.h"
 
 namespace esphome {
-namespace sd_file_server {
+namespace ftp_server {
 
 class FTPServer : public Component, public AsyncWebHandler {
  public:
@@ -65,5 +65,5 @@ struct Path {
   static std::string mime_type(std::string const &);
 };
 
-}  // namespace sd_file_server
+}  // namespace ftp_server
 }  // namespace esphome
