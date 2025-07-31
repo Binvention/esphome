@@ -1,5 +1,6 @@
 #include "filter.h"
 #include <cmath>
+#include "esphome/core/application.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/log.h"
 #include "sensor.h"
@@ -50,6 +51,7 @@ optional<float> MedianFilter::new_value(float value) {
     if (!this->queue_.empty()) {
       // Copy queue without NaN values
       std::vector<float> median_queue;
+      median_queue.reserve(this->queue_.size());
       for (auto v : this->queue_) {
         if (!std::isnan(v)) {
           median_queue.push_back(v);
@@ -118,7 +120,7 @@ optional<float> QuantileFilter::new_value(float value) {
       size_t queue_size = quantile_queue.size();
       if (queue_size) {
         size_t position = ceilf(queue_size * this->quantile_) - 1;
-        ESP_LOGVV(TAG, "QuantileFilter(%p)::position: %d/%d", this, position + 1, queue_size);
+        ESP_LOGVV(TAG, "QuantileFilter(%p)::position: %zu/%zu", this, position + 1, queue_size);
         result = quantile_queue[position];
       }
     }
@@ -325,6 +327,40 @@ ThrottleFilter::ThrottleFilter(uint32_t min_time_between_inputs) : min_time_betw
 optional<float> ThrottleFilter::new_value(float value) {
   const uint32_t now = millis();
   if (this->last_input_ == 0 || now - this->last_input_ >= min_time_between_inputs_) {
+    this->last_input_ = now;
+    return value;
+  }
+  return {};
+}
+
+// ThrottleWithPriorityFilter
+ThrottleWithPriorityFilter::ThrottleWithPriorityFilter(uint32_t min_time_between_inputs,
+                                                       std::vector<TemplatableValue<float>> prioritized_values)
+    : min_time_between_inputs_(min_time_between_inputs), prioritized_values_(std::move(prioritized_values)) {}
+
+optional<float> ThrottleWithPriorityFilter::new_value(float value) {
+  bool is_prioritized_value = false;
+  int8_t accuracy = this->parent_->get_accuracy_decimals();
+  float accuracy_mult = powf(10.0f, accuracy);
+  const uint32_t now = App.get_loop_component_start_time();
+  // First, determine if the new value is one of the prioritized values
+  for (auto prioritized_value : this->prioritized_values_) {
+    if (std::isnan(prioritized_value.value())) {
+      if (std::isnan(value)) {
+        is_prioritized_value = true;
+        break;
+      }
+      continue;
+    }
+    float rounded_prioritized_value = roundf(accuracy_mult * prioritized_value.value());
+    float rounded_value = roundf(accuracy_mult * value);
+    if (rounded_prioritized_value == rounded_value) {
+      is_prioritized_value = true;
+      break;
+    }
+  }
+  // Finally, determine if the new value should be throttled and pass it through if not
+  if (this->last_input_ == 0 || now - this->last_input_ >= min_time_between_inputs_ || is_prioritized_value) {
     this->last_input_ = now;
     return value;
   }

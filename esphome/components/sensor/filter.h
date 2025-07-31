@@ -3,9 +3,9 @@
 #include <queue>
 #include <utility>
 #include <vector>
+#include "esphome/core/automation.h"
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
-#include "esphome/core/automation.h"
 
 namespace esphome {
 namespace sensor {
@@ -312,6 +312,20 @@ class ThrottleFilter : public Filter {
  protected:
   uint32_t last_input_{0};
   uint32_t min_time_between_inputs_;
+};
+
+/// Same as 'throttle' but will immediately publish values contained in `value_to_prioritize`.
+class ThrottleWithPriorityFilter : public Filter {
+ public:
+  explicit ThrottleWithPriorityFilter(uint32_t min_time_between_inputs,
+                                      std::vector<TemplatableValue<float>> prioritized_values);
+
+  optional<float> new_value(float value) override;
+
+ protected:
+  uint32_t last_input_{0};
+  uint32_t min_time_between_inputs_;
+  std::vector<TemplatableValue<float>> prioritized_values_;
 };
 
 class TimeoutFilter : public Filter, public Component {

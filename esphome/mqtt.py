@@ -1,3 +1,4 @@
+import contextlib
 from datetime import datetime
 import hashlib
 import json
@@ -28,7 +29,7 @@ from esphome.const import (
 )
 from esphome.core import CORE, EsphomeError
 from esphome.helpers import get_int_env, get_str_env
-from esphome.log import Fore, color
+from esphome.log import AnsiFore, color
 from esphome.util import safe_print
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,10 +53,8 @@ def initialize(
     client = prepare(
         config, subscriptions, on_message, on_connect, username, password, client_id
     )
-    try:
+    with contextlib.suppress(KeyboardInterrupt):
         client.loop_forever()
-    except KeyboardInterrupt:
-        pass
     return 0
 
 
@@ -291,7 +290,7 @@ def get_fingerprint(config):
 
     sha1 = hashlib.sha1(cert_der).hexdigest()
 
-    safe_print(f"SHA1 Fingerprint: {color(Fore.CYAN, sha1)}")
+    safe_print(f"SHA1 Fingerprint: {color(AnsiFore.CYAN, sha1)}")
     safe_print(
         f"Copy the string above into mqtt.ssl_fingerprints section of {CORE.config_path}"
     )
