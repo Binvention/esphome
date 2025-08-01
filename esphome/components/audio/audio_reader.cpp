@@ -15,7 +15,7 @@ namespace esphome {
 namespace audio {
 
 static const uint32_t READ_WRITE_TIMEOUT_MS = 20;
-static const size_t TEMP_BUFFER_SIZE = 50;
+static const size_t TEMP_BUFFER_SIZE = 500;
 
 AudioReader::AudioReader(size_t buffer_size) : buffer_size_(buffer_size){}
 
