@@ -64,6 +64,7 @@ class StorageClient : public EntityBase {
   std::vector<FileInfo> list_directory(const std::string &path);
   FileInfo get_file_info(const std::string &path);
   void set_file(const std::string &path);
+  void set_file(FileInfo file);
   uint8_t read();
   void set_read_offset(size_t offset);
   bool write(uint8_t data);

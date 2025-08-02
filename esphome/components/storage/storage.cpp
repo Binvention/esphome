@@ -143,6 +143,12 @@ void StorageClient::set_file(const std::string &path) {
   ESP_LOGVV(TAG, "Current File Set to %s", this->current_file_.path.c_str());
 }
 
+void StorageClient::set_file(FileInfo file) {
+  this->current_file_ = file;
+  this->current_storage_->set_file(&(this->current_file_));
+  ESP_LOGVV(TAG, "Current File Set to %s", this->current_file_.path.c_str());
+}
+
 uint8_t StorageClient::read() {
   if (this->current_storage_) {
     ESP_LOGVV(TAG, "Reading File: %s", this->current_file_.path.c_str());
