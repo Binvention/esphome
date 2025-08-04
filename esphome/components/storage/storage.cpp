@@ -145,6 +145,19 @@ void StorageClient::set_file(const std::string &path) {
 
 void StorageClient::set_file(FileInfo file) {
   this->current_file_ = file;
+  int prefix_end = this->current_file_.path.find("://");
+  if (prefix_end < 0) {
+    ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
+    return;
+  }
+  std::string prefix = this->current_file_.path.substr(0, prefix_end);
+  auto nstorage = storages.find(prefix);
+  if (nstorage == storages.end()) {
+    ESP_LOGE(TAG, "storage %s prefix does not exist", prefix);
+    return;
+  }
+  this->current_storage_ = nstorage->second;
+  this->current_file_.path = this->current_file_.path.substr(prefix_end + 3);
   this->current_storage_->set_file(&(this->current_file_));
   ESP_LOGVV(TAG, "Current File Set to %s", this->current_file_.path.c_str());
 }
