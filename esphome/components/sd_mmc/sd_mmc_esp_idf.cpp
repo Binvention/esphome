@@ -17,8 +17,6 @@ namespace sd_mmc {
 static constexpr size_t FILE_PATH_MAX = ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN;
 static const char *TAG = "sd_mmc_card";
 
-std::string build_path(const char *path) { return MOUNT_POINT + path; }
-
 void SdMmc::setup() {
   if (this->power_ctrl_pin_ != nullptr)
     this->power_ctrl_pin_->setup();
@@ -73,7 +71,7 @@ void SdMmc::setup() {
 }
 
 void SdMmc::write_file(const char *path, const uint8_t *buffer, size_t len, const char *mode) {
-  std::string absolut_path = build_path(path);
+  std::string absolut_path = this->mount_point_ + path;
   FILE *file = NULL;
   file = fopen(absolut_path.c_str(), mode);
   if (file == NULL) {
@@ -90,7 +88,7 @@ void SdMmc::write_file(const char *path, const uint8_t *buffer, size_t len, cons
 
 bool SdMmc::create_directory(const char *path) {
   ESP_LOGV(TAG, "Create directory: %s", path);
-  std::string absolut_path = build_path(path);
+  std::string absolut_path = this->mount_point_ + path;
   if (mkdir(absolut_path.c_str(), 0777) < 0) {
     ESP_LOGE(TAG, "Failed to create a new directory: %s", strerror(errno));
     return false;
@@ -105,7 +103,7 @@ bool SdMmc::remove_directory(const char *path) {
     ESP_LOGE(TAG, "Not a directory");
     return false;
   }
-  std::string absolut_path = build_path(path);
+  std::string absolut_path = this->mount_point_ + path;
   if (remove(absolut_path.c_str()) != 0) {
     ESP_LOGE(TAG, "Failed to remove directory: %s", strerror(errno));
   }
@@ -119,7 +117,7 @@ bool SdMmc::delete_file(const char *path) {
     ESP_LOGE(TAG, "Not a file");
     return false;
   }
-  std::string absolut_path = build_path(path);
+  std::string absolut_path = this->mount_point_ + path;
   if (remove(absolut_path.c_str()) != 0) {
     ESP_LOGE(TAG, "Failed to remove file: %s", strerror(errno));
   }
@@ -130,7 +128,7 @@ bool SdMmc::delete_file(const char *path) {
 std::vector<uint8_t> SdMmc::read_file(char const *path) {
   ESP_LOGV(TAG, "Read File: %s", path);
 
-  std::string absolut_path = build_path(path);
+  std::string absolut_path = this->mount_point_ + path;
   FILE *file = nullptr;
   file = fopen(absolut_path.c_str(), "rb");
   if (file == nullptr) {
@@ -154,7 +152,7 @@ std::vector<uint8_t> SdMmc::read_file(char const *path) {
 size_t SdMmc::read_file_chunk(const char *path, size_t offset, uint8_t *buffer, size_t length) {
   ESP_LOGV(TAG, "Read File: %s", path);
 
-  std::string absolut_path = build_path(path);
+  std::string absolut_path = this->mount_point_ + path;
   FILE *file = nullptr;
   file = fopen(absolut_path.c_str(), "rb");
   if (file == nullptr) {
@@ -173,7 +171,7 @@ size_t SdMmc::read_file_chunk(const char *path, size_t offset, uint8_t *buffer, 
 std::vector<storage::FileInfo> &SdMmc::list_directory_file_info_rec(const char *path, uint8_t depth,
                                                                     std::vector<storage::FileInfo> &list) {
   ESP_LOGV(TAG, "Listing directory file info: %s\n", path);
-  std::string absolut_path = build_path(path);
+  std::string absolut_path = this->mount_point_ + path;
   DIR *dir = opendir(absolut_path.c_str());
   if (!dir) {
     ESP_LOGE(TAG, "Failed to open directory: %s", strerror(errno));
@@ -210,7 +208,7 @@ std::vector<storage::FileInfo> &SdMmc::list_directory_file_info_rec(const char *
 }
 
 bool SdMmc::is_directory(const char *path) {
-  std::string absolut_path = build_path(path);
+  std::string absolut_path = this->mount_point_ + path;
   DIR *dir = opendir(absolut_path.c_str());
   if (dir) {
     closedir(dir);
@@ -219,7 +217,7 @@ bool SdMmc::is_directory(const char *path) {
 }
 
 size_t SdMmc::file_size(const char *path) {
-  std::string absolut_path = build_path(path);
+  std::string absolut_path = this->mount_point_ + path;
   struct stat info;
   size_t file_size = 0;
   if (stat(absolut_path.c_str(), &info) < 0) {
