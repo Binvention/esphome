@@ -26,7 +26,7 @@ void SdMmc::setup() {
 
   sdmmc_host_t host = SDMMC_HOST_DEFAULT();
   if (this->slot_ == 0) {
-    host.slot = SDMMC_HOST_SLOT_0
+    host.slot = SDMMC_HOST_SLOT_0;
   }
   if (this->high_speed_) {
     host.max_feq_khz = SDMMC_FREQ_HIGHSPEED;
