@@ -16,7 +16,6 @@ namespace sd_mmc {
 
 static constexpr size_t FILE_PATH_MAX = ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN;
 static const char *TAG = "sd_mmc_card";
-static const std::string MOUNT_POINT("/sd");
 
 std::string build_path(const char *path) { return MOUNT_POINT + path; }
 
@@ -53,7 +52,7 @@ void SdMmc::setup() {
   // connected on the bus. This is for debug / example purpose only.
   slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
 
-  auto ret = esp_vfs_fat_sdmmc_mount(MOUNT_POINT.c_str(), &host, &slot_config, &mount_config, &this->card_);
+  auto ret = esp_vfs_fat_sdmmc_mount(this->mount_point_.c_str(), &host, &slot_config, &mount_config, &this->card_);
 
   if (ret != ESP_OK) {
     if (ret == ESP_FAIL) {

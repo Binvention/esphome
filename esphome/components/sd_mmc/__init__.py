@@ -24,6 +24,7 @@ CONF_DATA2_PIN = "data2_pin"
 CONF_DATA3_PIN = "data3_pin"
 CONF_MODE_1BIT = "mode_1bit"
 CONF_POWER_CTRL_PIN = "power_ctrl_pin"
+CONF_FATFS_ROOT = "mount_point"
 
 sd_mmc_ns = cg.esphome_ns.namespace("sd_mmc")
 SdMmc = sd_mmc_ns.class_("SdMmc", cg.Component)
@@ -50,6 +51,13 @@ def validate_raw_data(value):
     )
 
 
+def validate_mount_point(value):
+    if isinstance(value, str):
+        if value[0] == "/":
+            return value.encode("utf-8")
+    raise cv.Invalid("mount point must be a string that starts with /")
+
+
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(SdMmc),
@@ -67,6 +75,7 @@ CONFIG_SCHEMA = cv.Schema(
                 CONF_PULLDOWN: False,
             }
         ),
+        cv.Optional(CONF_FATFS_ROOT, default="/sd"): cv.string_strict,
     }
 ).extend(cv.COMPONENT_SCHEMA)
 
