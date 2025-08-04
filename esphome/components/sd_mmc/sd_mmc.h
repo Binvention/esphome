@@ -81,6 +81,8 @@ class SdMmc : public Component {
   void set_mode_1bit(bool);
   void set_power_ctrl_pin(GPIOPin *);
   void set_mount_point(std::string mount_point);
+  void set_slot(uint8_t slot);
+  void set_high_speed(bool high_speed);
 
  protected:
   ErrorCode init_error_;
@@ -94,6 +96,8 @@ class SdMmc : public Component {
   GPIOPin *power_ctrl_pin_{nullptr};
   std::string current_file_;
   std::string mount_point_;
+  uint8_t slot_;
+  bool hight_speed_;
 
 #ifdef USE_ESP_IDF
   sdmmc_card_t *card_;

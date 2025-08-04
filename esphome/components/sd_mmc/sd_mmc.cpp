@@ -120,6 +120,8 @@ void SdMmc::set_mode_1bit(bool b) { this->mode_1bit_ = b; }
 
 void SdMmc::set_power_ctrl_pin(GPIOPin *pin) { this->power_ctrl_pin_ = pin; }
 void SdMmc::set_mount_point(std::string mount_point) { this->mount_point_ = mount_point; }
+void SdMmc::set_slot(uint8_t slot) { this->slot_ = slot; }
+void SdMmc::set_high_speed(bool high_speed) { this->hight_speed_ = high_speed; }
 
 std::string SdMmc::error_code_to_string(SdMmc::ErrorCode code) {
   switch (code) {

@@ -25,6 +25,8 @@ CONF_DATA3_PIN = "data3_pin"
 CONF_MODE_1BIT = "mode_1bit"
 CONF_POWER_CTRL_PIN = "power_ctrl_pin"
 CONF_FATFS_ROOT = "mount_point"
+CONF_HOST_SLOT = "host_slot"
+CONF_HIGH_SPEED = "high_speed"
 
 sd_mmc_ns = cg.esphome_ns.namespace("sd_mmc")
 SdMmc = sd_mmc_ns.class_("SdMmc", cg.Component)
@@ -76,6 +78,8 @@ CONFIG_SCHEMA = cv.Schema(
             }
         ),
         cv.Optional(CONF_FATFS_ROOT, default="/sd"): cv.string_strict,
+        cv.Optional(CONF_HOST_SLOT, default=1): cv.int,
+        cv.Optional(CONF_HIGH_SPEED, default=1): cv.boolean,
     }
 ).extend(cv.COMPONENT_SCHEMA)
 
