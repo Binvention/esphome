@@ -97,7 +97,7 @@ class SdMmc : public Component {
   std::string current_file_;
   std::string mount_point_;
   uint8_t slot_;
-  bool hight_speed_;
+  bool high_speed_;
 
 #ifdef USE_ESP_IDF
   sdmmc_card_t *card_;
