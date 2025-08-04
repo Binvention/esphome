@@ -93,6 +93,8 @@ async def to_code(config):
     cg.add(var.set_clk_pin(config[CONF_CLK_PIN]))
     cg.add(var.set_cmd_pin(config[CONF_CMD_PIN]))
     cg.add(var.set_data0_pin(config[CONF_DATA0_PIN]))
+    cg.add(var.set_high_speed(config[CONF_HIGH_SPEED]))
+    cg.add(var.set_slot(config[CONF_HOST_SLOT]))
 
     if not config[CONF_MODE_1BIT]:
         cg.add(var.set_data1_pin(config[CONF_DATA1_PIN]))
