@@ -179,13 +179,13 @@ std::vector<storage::FileInfo> &SdMmc::list_directory_file_info_rec(const char *
   }
   char entry_absolut_path[FILE_PATH_MAX];
   char entry_path[FILE_PATH_MAX];
-  const size_t dirpath_len = MOUNT_POINT.size();
+  const size_t dirpath_len = this->mount_point_.size();
   size_t entry_path_len = strlen(path);
   strlcpy(entry_path, path, sizeof(entry_path));
   strlcpy(entry_path + entry_path_len, "/", sizeof(entry_path) - entry_path_len);
   entry_path_len = strlen(entry_path);
 
-  strlcpy(entry_absolut_path, MOUNT_POINT.c_str(), sizeof(entry_absolut_path));
+  strlcpy(entry_absolut_path, this->mount_point_.c_str(), sizeof(entry_absolut_path));
   struct dirent *entry;
   while ((entry = readdir(dir)) != nullptr) {
     size_t file_size = 0;
@@ -246,7 +246,7 @@ void SdMmc::update_sensors() {
   FATFS *fs;
   DWORD fre_clust, fre_sect, tot_sect;
   uint64_t total_bytes = -1, free_bytes = -1, used_bytes = -1;
-  auto res = f_getfree(MOUNT_POINT.c_str(), &fre_clust, &fs);
+  auto res = f_getfree(this->mount_point_.c_str(), &fre_clust, &fs);
   if (!res) {
     tot_sect = (fs->n_fatent - 2) * fs->csize;
     fre_sect = fre_clust * fs->csize;
