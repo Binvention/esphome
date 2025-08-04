@@ -78,7 +78,7 @@ CONFIG_SCHEMA = cv.Schema(
             }
         ),
         cv.Optional(CONF_FATFS_ROOT, default="/sd"): cv.string_strict,
-        cv.Optional(CONF_HOST_SLOT, default=1): cv.int_range(0, 1),
+        cv.Optional(CONF_HOST_SLOT, default=1): cv.int_range(min=0, max=1),
         cv.Optional(CONF_HIGH_SPEED, default=1): cv.boolean,
     }
 ).extend(cv.COMPONENT_SCHEMA)
