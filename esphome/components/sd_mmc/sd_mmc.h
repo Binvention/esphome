@@ -59,15 +59,15 @@ class SdMmc : public Component {
   std::vector<uint8_t> read_file(const std::string &path);
   size_t read_file_chunk(const char *path, size_t offset, uint8_t *buffer, size_t length);
   size_t read_file_chunk(const std::string &path, size_t offset, uint8_t *buffer, size_t length);
-  bool is_directory(const char *path);
-  bool is_directory(const std::string &path);
-  std::vector<std::string> list_directory(const char *path, uint8_t depth);
-  std::vector<std::string> list_directory(const std::string &path, uint8_t depth);
-  std::vector<storage::FileInfo> list_directory_file_info(const char *path, uint8_t depth);
-  std::vector<storage::FileInfo> list_directory_file_info(const std::string &path, uint8_t depth);
-  storage::FileInfo file_info(const std::string &path);
-  size_t file_size(const char *path);
-  size_t file_size(const std::string &path);
+  bool is_directory(const char *path) const;
+  bool is_directory(const std::string &path) const;
+  std::vector<std::string> list_directory(const char *path, uint8_t depth) const;
+  std::vector<std::string> list_directory(const std::string &path, uint8_t depth) const;
+  std::vector<storage::FileInfo> list_directory_file_info(const char *path, uint8_t depth) const;
+  std::vector<storage::FileInfo> list_directory_file_info(const std::string &path, uint8_t depth) const;
+  storage::FileInfo file_info(const std::string &path) const;
+  size_t file_size(const char *path) const;
+  size_t file_size(const std::string &path) const;
 #ifdef USE_SENSOR
   void add_file_size_sensor(sensor::Sensor *, const std::string &path);
 #endif
@@ -113,7 +113,7 @@ class SdMmc : public Component {
   std::string sd_card_type() const;
 #endif
   std::vector<storage::FileInfo> &list_directory_file_info_rec(const char *path, uint8_t depth,
-                                                               std::vector<storage::FileInfo> &list);
+                                                               std::vector<storage::FileInfo> &list) const;
   static std::string error_code_to_string(ErrorCode);
 };
 

@@ -20,8 +20,8 @@ class SD_MMC_Storage : public storage::Storage, public Component {
  protected:
   void direct_set_file(const std::string &path);
   void direct_delete_file(const std::string &path);
-  storage::FileInfo direct_get_file_info(const std::string &path);
-  std::vector<storage::FileInfo> direct_list_directory(const std::string &path);
+  storage::FileInfo direct_get_file_info(const std::string &path) const;
+  std::vector<storage::FileInfo> direct_list_directory(const std::string &path) const;
   SdMmc *sd_ref_;
   storage::FileInfo current_file_;
 };

@@ -127,7 +127,7 @@ size_t SdMmc::read_file_chunk(const char *path, size_t offset, uint8_t *buffer, 
 }
 
 std::vector<storage::FileInfo> &SdMmc::list_directory_file_info_rec(const char *path, uint8_t depth,
-                                                                    std::vector<storage::FileInfo> &list) {
+                                                                    std::vector<storage::FileInfo> &list) const {
   ESP_LOGV(TAG, "Listing directory file info: %s\n", path);
 
   File root = SD_MMC.open(path);
@@ -153,7 +153,7 @@ std::vector<storage::FileInfo> &SdMmc::list_directory_file_info_rec(const char *
   return list;
 }
 
-bool SdMmc::is_directory(const char *path) {
+bool SdMmc::is_directory(const char *path) const {
   File root = SD_MMC.open(path);
   if (!root) {
     ESP_LOGE(TAG, "Failed to open directory");
@@ -162,7 +162,7 @@ bool SdMmc::is_directory(const char *path) {
   return root.isDirectory();
 }
 
-size_t SdMmc::file_size(const char *path) {
+size_t SdMmc::file_size(const char *path) const {
   File file = SD_MMC.open(path);
   return file.size();
 }

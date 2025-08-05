@@ -93,18 +93,20 @@ void SD_MMC_Storage::direct_delete_file(const std::string &path) {
   auto file = direct_get_file_info(path);
   if (file.is_directory) {
     ESP_LOGE(TAG, "file to be deleted is a directory");
+    sd_ref_->remove_directory(path.c_str());
+  } else {
+    sd_ref_->delete_file(path);
   }
-  sd_ref_->delete_file(path);
 }
 
-storage::FileInfo SD_MMC_Storage::direct_get_file_info(const std::string &path) {
+storage::FileInfo SD_MMC_Storage::direct_get_file_info(const std::string &path) const {
   if (this->sd_ref_ != nullptr) {
     return this->sd_ref_->file_info("/" + path);
   }
   return storage::FileInfo("", 0, false);
 }
 
-std::vector<storage::FileInfo> SD_MMC_Storage::direct_list_directory(const std::string &path) {
+std::vector<storage::FileInfo> SD_MMC_Storage::direct_list_directory(const std::string &path) const {
   if (this->sd_ref_ != nullptr) {
     return this->sd_ref_->list_directory_file_info("/" + path, 0);
   }

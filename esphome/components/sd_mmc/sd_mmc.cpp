@@ -61,34 +61,34 @@ void SdMmc::append_file(const char *path, const uint8_t *buffer, size_t len) {
   this->write_file(path, buffer, len, "a");
 }
 
-std::vector<std::string> SdMmc::list_directory(const char *path, uint8_t depth) {
+std::vector<std::string> SdMmc::list_directory(const char *path, uint8_t depth) const {
   std::vector<std::string> list;
   std::vector<storage::FileInfo> infos = list_directory_file_info(path, depth);
   std::transform(infos.cbegin(), infos.cend(), list.begin(), [](storage::FileInfo const &info) { return info.path; });
   return list;
 }
 
-std::vector<std::string> SdMmc::list_directory(const std::string &path, uint8_t depth) {
+std::vector<std::string> SdMmc::list_directory(const std::string &path, uint8_t depth) const {
   return this->list_directory(path.c_str(), depth);
 }
 
-std::vector<storage::FileInfo> SdMmc::list_directory_file_info(const char *path, uint8_t depth) {
+std::vector<storage::FileInfo> SdMmc::list_directory_file_info(const char *path, uint8_t depth) const {
   std::vector<storage::FileInfo> list;
   list_directory_file_info_rec(path, depth, list);
   return list;
 }
 
-std::vector<storage::FileInfo> SdMmc::list_directory_file_info(const std::string &path, uint8_t depth) {
+std::vector<storage::FileInfo> SdMmc::list_directory_file_info(const std::string &path, uint8_t depth) const {
   return this->list_directory_file_info(path.c_str(), depth);
 }
 
-storage::FileInfo SdMmc::file_info(const std::string &path) {
+storage::FileInfo SdMmc::file_info(const std::string &path) const {
   return storage::FileInfo(path, this->file_size(path), this->is_directory(path));
 }
 
-size_t SdMmc::file_size(std::string const &path) { return this->file_size(path.c_str()); }
+size_t SdMmc::file_size(std::string const &path) const { return this->file_size(path.c_str()); }
 
-bool SdMmc::is_directory(std::string const &path) { return this->is_directory(path.c_str()); }
+bool SdMmc::is_directory(std::string const &path) const { return this->is_directory(path.c_str()); }
 
 bool SdMmc::delete_file(std::string const &path) { return this->delete_file(path.c_str()); }
 

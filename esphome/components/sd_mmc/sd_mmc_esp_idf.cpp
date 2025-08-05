@@ -175,7 +175,7 @@ size_t SdMmc::read_file_chunk(const char *path, size_t offset, uint8_t *buffer, 
 }
 
 std::vector<storage::FileInfo> &SdMmc::list_directory_file_info_rec(const char *path, uint8_t depth,
-                                                                    std::vector<storage::FileInfo> &list) {
+                                                                    std::vector<storage::FileInfo> &list) const {
   ESP_LOGV(TAG, "Listing directory file info: %s\n", path);
   std::string absolut_path = this->mount_point_ + path;
   DIR *dir = opendir(absolut_path.c_str());
@@ -213,7 +213,7 @@ std::vector<storage::FileInfo> &SdMmc::list_directory_file_info_rec(const char *
   return list;
 }
 
-bool SdMmc::is_directory(const char *path) {
+bool SdMmc::is_directory(const char *path) const {
   std::string absolut_path = this->mount_point_ + path;
   DIR *dir = opendir(absolut_path.c_str());
   if (dir) {
@@ -222,7 +222,7 @@ bool SdMmc::is_directory(const char *path) {
   return dir != nullptr;
 }
 
-size_t SdMmc::file_size(const char *path) {
+size_t SdMmc::file_size(const char *path) const {
   std::string absolut_path = this->mount_point_ + path;
   struct stat info;
   size_t file_size = 0;
