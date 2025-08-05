@@ -15,7 +15,6 @@ namespace esphome {
 namespace audio {
 
 static const uint32_t READ_WRITE_TIMEOUT_MS = 20;
-static const size_t TEMP_BUFFER_SIZE = 1000;
 
 AudioReader::AudioReader(size_t buffer_size) : buffer_size_(buffer_size) {}
 
@@ -74,13 +73,13 @@ AudioFileType AudioReader::get_audio_type(const char *content_type) {
 }
 
 AudioReaderState AudioReader::read() {
-  uint8_t temp[TEMP_BUFFER_SIZE];
+  uint8_t temp[buffer_size_];
   int num_bytes;
   int available = this->file_ring_buffer_->free();
   if (available > 0) {
     do {
-      if (available >= TEMP_BUFFER_SIZE) {
-        num_bytes = this->storage_client_.read_array(&(temp[0]), TEMP_BUFFER_SIZE);
+      if (available >= buffer_size_) {
+        num_bytes = this->storage_client_.read_array(&(temp[0]), buffer_size_);
       } else {
         num_bytes = this->storage_client_.read_array(&(temp[0]), available);
       }
@@ -94,7 +93,7 @@ AudioReaderState AudioReader::read() {
                    num_bytes);
         }
       }
-    } while (num_bytes != 0 && available >= TEMP_BUFFER_SIZE);
+    } while (num_bytes != 0 && available >= buffer_size_);
   } else {
     ESP_LOGVV("Audio Reader", "No Free Space in buffer");
     return AudioReaderState::READING;
