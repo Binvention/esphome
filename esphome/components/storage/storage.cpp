@@ -27,6 +27,8 @@ void Storage::set_file(FileInfo *file) {
   }
 }
 
+void Storage::delete_file(const std::string &path) { this->direct_delete_file(path); }
+
 uint8_t Storage::read() {
   uint8_t data;
   data = this->direct_read_byte(this->current_file_->read_offset);
@@ -141,6 +143,13 @@ void StorageClient::set_file(const std::string &path) {
   this->current_file_ = this->current_storage_->get_file_info(path.substr(prefix_end + 3));
   this->current_storage_->set_file(&(this->current_file_));
   ESP_LOGVV(TAG, "Current File Set to %s", this->current_file_.path.c_str());
+}
+
+void StorageClient::delete_current_file() {
+  if (this->current_file_.path.empty()) {
+    return;
+  }
+  this->current_storage_->delete_file(this->current_file_.path);
 }
 
 void StorageClient::set_file(FileInfo file) {
