@@ -44,8 +44,8 @@ class Storage : public EntityBase {
   // void write_on_shutdown(bool value);
 
  protected:
-  virtual void direct_set_file(const std::string &file) = 0;
-  virtual void direct_delete_file(const std::string &file) = 0;
+  virtual void direct_set_file(const std::string &path) = 0;
+  virtual void direct_delete_file(const std::string &path) = 0;
   virtual FileInfo direct_get_file_info(const std::string &path) = 0;
   virtual std::vector<FileInfo> direct_list_directory(const std::string &path) = 0;
   // void load_buffer (uint32_t offset, uint32_t buffer_offset, uint32_t length);
