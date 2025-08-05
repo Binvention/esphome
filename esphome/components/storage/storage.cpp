@@ -16,9 +16,11 @@ FileInfo::FileInfo(std::string const &path, size_t size, bool is_directory)
 
 FileInfo::FileInfo() : path(), size(), is_directory() { this->read_offset = 0; }
 
-std::vector<FileInfo> Storage::list_directory(const std::string &path) { return this->direct_list_directory(path); }
+std::vector<FileInfo> Storage::list_directory(const std::string &path) const {
+  return this->direct_list_directory(path);
+}
 
-FileInfo Storage::get_file_info(const std::string &path) { return this->direct_get_file_info(path); }
+FileInfo Storage::get_file_info(const std::string &path) const { return this->direct_get_file_info(path); }
 
 void Storage::set_file(FileInfo *file) {
   if (this->current_file_ != file) {
@@ -91,7 +93,7 @@ void Storage::update_offset(size_t value) {
   //    }
 }
 
-std::vector<FileInfo> StorageClient::list_directory(const std::string &path) {
+std::vector<FileInfo> StorageClient::list_directory(const std::string &path) const {
   int prefix_end = path.find("://");
   if (prefix_end < 0) {
     ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");
@@ -110,7 +112,7 @@ std::vector<FileInfo> StorageClient::list_directory(const std::string &path) {
   return result;
 }
 
-FileInfo StorageClient::get_file_info(const std::string &path) {
+FileInfo StorageClient::get_file_info(const std::string &path) const {
   int prefix_end = path.find("://");
   if (prefix_end < 0) {
     ESP_LOGE(TAG, "Invalid path. Must start with a valid prefix");

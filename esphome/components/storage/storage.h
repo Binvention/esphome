@@ -26,8 +26,8 @@ class Storage : public EntityBase {
   virtual size_t direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length) = 0;
   virtual bool direct_write_byte_array(uint8_t *data, size_t data_length) = 0;
   virtual bool direct_append_byte_array(uint8_t *data, size_t data_length) = 0;
-  std::vector<FileInfo> list_directory(const std::string &path);
-  FileInfo get_file_info(const std::string &path);
+  std::vector<FileInfo> list_directory(const std::string &path) const;
+  FileInfo get_file_info(const std::string &path) const;
   void set_file(FileInfo *file);
   void delete_file(const std::string &path);
   uint8_t read();
@@ -46,8 +46,8 @@ class Storage : public EntityBase {
  protected:
   virtual void direct_set_file(const std::string &path) = 0;
   virtual void direct_delete_file(const std::string &path) = 0;
-  virtual FileInfo direct_get_file_info(const std::string &path) = 0;
-  virtual std::vector<FileInfo> direct_list_directory(const std::string &path) = 0;
+  virtual FileInfo direct_get_file_info(const std::string &path) const = 0;
+  virtual std::vector<FileInfo> direct_list_directory(const std::string &path) const = 0;
   // void load_buffer (uint32_t offset, uint32_t buffer_offset, uint32_t length);
   // void write_buffer (uint32_t offset, uint32_t buffer_offset, uint32_t length);
   // void allocate_buffer(uint32_t buffer_size);
@@ -63,8 +63,8 @@ class Storage : public EntityBase {
 
 class StorageClient : public EntityBase {
  public:
-  std::vector<FileInfo> list_directory(const std::string &path);
-  FileInfo get_file_info(const std::string &path);
+  std::vector<FileInfo> list_directory(const std::string &path) const;
+  FileInfo get_file_info(const std::string &path) const;
   void set_file(const std::string &path);
   void delete_current_file();
   void set_file(FileInfo file);
