@@ -29,6 +29,7 @@ class Storage : public EntityBase {
   std::vector<FileInfo> list_directory(const std::string &path);
   FileInfo get_file_info(const std::string &path);
   void set_file(FileInfo *file);
+  void delete_file(const std::string &path);
   uint8_t read();
   bool write(uint8_t data);
   bool append(uint8_t data);
@@ -44,6 +45,7 @@ class Storage : public EntityBase {
 
  protected:
   virtual void direct_set_file(const std::string &file) = 0;
+  virtual void direct_delete_file(const std::string &file) = 0;
   virtual FileInfo direct_get_file_info(const std::string &path) = 0;
   virtual std::vector<FileInfo> direct_list_directory(const std::string &path) = 0;
   // void load_buffer (uint32_t offset, uint32_t buffer_offset, uint32_t length);
@@ -64,6 +66,7 @@ class StorageClient : public EntityBase {
   std::vector<FileInfo> list_directory(const std::string &path);
   FileInfo get_file_info(const std::string &path);
   void set_file(const std::string &path);
+  void delete_current_file();
   void set_file(FileInfo file);
   uint8_t read();
   void set_read_offset(size_t offset);
