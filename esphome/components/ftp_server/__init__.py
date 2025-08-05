@@ -1,5 +1,5 @@
 import esphome.codegen as cg
-from esphome.components import storage, web_server_base
+from esphome.components import web_server_base
 from esphome.components.web_server_base import CONF_WEB_SERVER_BASE_ID
 import esphome.config_validation as cv
 from esphome.const import CONF_ID
@@ -14,14 +14,13 @@ CONF_ENABLE_UPLOAD = "enable_upload"
 AUTO_LOAD = ["web_server_base"]
 DEPENDENCIES = ["storage"]
 
-file_server_ns = cg.esphome_ns.namespace("file_server")
-FileServer = file_server_ns.class_("FileServer", cg.Component)
-storage_ns = storage.storage_ns
+ftp_server_ns = cg.esphome_ns.namespace("ftp_server")
+FTPServer = ftp_server_ns.class_("FTPServer", cg.Component)
 
 CONFIG_SCHEMA = cv.All(
     cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(FileServer),
+            cv.GenerateID(): cv.declare_id(FTPServer),
             cv.GenerateID(CONF_WEB_SERVER_BASE_ID): cv.use_id(
                 web_server_base.WebServerBase
             ),
