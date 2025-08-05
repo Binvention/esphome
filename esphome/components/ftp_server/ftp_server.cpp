@@ -72,9 +72,9 @@ void FTPServer::handleUpload(AsyncWebServerRequest *request, const String &filen
   }
 }
 
-void FTPServer::set_url_prefix(std::string const &prefix) { this->url_prefix_ = prefix; }
+void FTPServer::set_url_prefix(std::string const &prefix) { this->prefix_ = prefix; }
 
-void FTPServer::set_root_path(std::string const &path) { this->root_path_ = path; }
+void FTPServer::set_root_path(std::string const &path) { this->root_ = path; }
 
 void FTPServer::set_deletion_enabled(bool allow) { this->deletion_enabled_ = allow; }
 
@@ -95,7 +95,7 @@ void FTPServer::handle_get(AsyncWebServerRequest *request) const {
 }
 
 void FTPServer::write_row(AsyncResponseStream *response, storage::FileInfo const &info) const {
-  std::string uri = "/" + Path::join(this->url_prefix_, Path::remove_root_path(info.path, this->root_path_));
+  std::string uri = "/" + Path::join(this->prefix_, Path::remove_root_path(info.path, this->root_));
   std::string file_name = Path::file_name(info.path);
   response->print("<tr><td>");
   if (info.is_directory) {
@@ -263,7 +263,7 @@ void FTPServer::handle_index(AsyncWebServerRequest *request, std::string const &
       <a href="/">Home</a>)"));
 
   std::string current_path = "/";
-  std::string relative_path = Path::join(this->url_prefix_, Path::remove_root_path(path, this->root_path_));
+  std::string relative_path = Path::join(this->prefix_, Path::remove_root_path(path, this->root_));
   std::vector<std::string> parts = Path::split_path(relative_path);
   for (std::string const &part : parts) {
     if (!part.empty()) {
@@ -350,9 +350,9 @@ void FTPServer::handle_delete(AsyncWebServerRequest *request) {
 }
 
 std::string FTPServer::build_prefix() const {
-  if (this->url_prefix_.length() == 0 || this->url_prefix_.at(0) != '/')
-    return "/" + this->url_prefix_;
-  return this->url_prefix_;
+  if (this->prefix_.length() == 0 || this->prefix_.at(0) != '/')
+    return "/" + this->prefix_;
+  return this->prefix_;
 }
 
 std::string FTPServer::extract_path_from_url(std::string const &url) const {
@@ -362,9 +362,9 @@ std::string FTPServer::extract_path_from_url(std::string const &url) const {
 
 std::string FTPServer::build_absolute_path(std::string relative_path) const {
   if (relative_path.size() == 0)
-    return this->root_path_;
+    return this->root_;
 
-  std::string absolute = Path::join(this->root_path_, relative_path);
+  std::string absolute = Path::join(this->root_, relative_path);
   return absolute;
 }
 

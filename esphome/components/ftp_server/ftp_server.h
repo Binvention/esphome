@@ -20,6 +20,8 @@ class FTPServer : public Component, public AsyncWebHandler {
   void set_deletion_enabled(bool);
   void set_download_enabled(bool);
   void set_upload_enabled(bool);
+  void set_url_prefix(const std::string &prefix);
+  void set_root_path(const std::string &root);
 
  protected:
   web_server_base::WebServerBase *base_;
@@ -28,6 +30,8 @@ class FTPServer : public Component, public AsyncWebHandler {
   bool deletion_enabled_;
   bool download_enabled_;
   bool upload_enabled_;
+  std::string prefix_;
+  std::string root_;
 
   std::string build_prefix() const;
   std::string extract_path_from_url(std::string const &) const;
