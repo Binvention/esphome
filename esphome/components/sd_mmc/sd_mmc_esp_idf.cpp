@@ -228,7 +228,7 @@ size_t SdMmc::file_size(const char *path) {
   size_t file_size = 0;
   if (stat(absolut_path.c_str(), &info) < 0) {
     ESP_LOGE(TAG, "Failed to stat file: %s", strerror(errno));
-    return -1;
+    return 0;
   }
   return info.st_size;
 }
