@@ -28,6 +28,8 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_ENABLE_DELETION, default=False): cv.boolean,
             cv.Optional(CONF_ENABLE_DOWNLOAD, default=False): cv.boolean,
             cv.Optional(CONF_ENABLE_UPLOAD, default=False): cv.boolean,
+            cv.Required(CONF_ROOT_PATH): cv.string,
+            cv.Optional(CONF_URL_PREFIX, default="/"): cv.string,
         }
     ).extend(cv.COMPONENT_SCHEMA),
 )
@@ -42,3 +44,5 @@ async def to_code(config):
     cg.add(var.set_deletion_enabled(config[CONF_ENABLE_DELETION]))
     cg.add(var.set_download_enabled(config[CONF_ENABLE_DOWNLOAD]))
     cg.add(var.set_upload_enabled(config[CONF_ENABLE_UPLOAD]))
+    cg.add(var.set_root_path(config[CONF_ROOT_PATH]))
+    cg.add(var.set_url_prefix(config[CONF_URL_PREFIX]))
