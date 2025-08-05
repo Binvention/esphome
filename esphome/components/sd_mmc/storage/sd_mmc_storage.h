@@ -15,12 +15,13 @@ class SD_MMC_Storage : public storage::Storage, public Component {
   size_t direct_read_byte_array(size_t offset, uint8_t *data, size_t data_length);
   bool direct_write_byte_array(uint8_t *data, size_t data_length);
   bool direct_append_byte_array(uint8_t *data, size_t data_length);
-  void direct_set_file(const std::string &file);
-  std::vector<storage::FileInfo> direct_list_directory(const std::string &path);
-  storage::FileInfo direct_get_file_info(const std::string &path);
   void set_sd_mmc(sd_mmc::SdMmc *value) { this->sd_ref_ = value; };
 
  protected:
+  void direct_set_file(const std::string &path);
+  void direct_delete_file(const std::string &path);
+  storage::FileInfo direct_get_file_info(const std::string &path);
+  std::vector<storage::FileInfo> direct_list_directory(const std::string &path);
   SdMmc *sd_ref_;
   storage::FileInfo current_file_;
 };

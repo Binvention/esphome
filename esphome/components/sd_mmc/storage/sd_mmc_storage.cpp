@@ -82,11 +82,19 @@ bool SD_MMC_Storage::direct_append_byte_array(uint8_t *data, size_t data_length)
 }
 
 void SD_MMC_Storage::direct_set_file(const std::string &path) {
+  this->current_file_ = direct_get_file_info(path);
   if (this->current_file_.is_directory) {
     ESP_LOGE(TAG, "File %s is actually a directory", this->current_file_.path);
     return;
   }
-  this->current_file_ = direct_get_file_info(path);
+}
+
+void SD_MMC_Storage::direct_delete_file(const std::string &path) {
+  auto file = direct_get_file_info(path);
+  if (file.is_directory) {
+    ESP_LOGE(TAG, "file to be deleted is a directory");
+  }
+  sd_ref_->delete_file(path);
 }
 
 storage::FileInfo SD_MMC_Storage::direct_get_file_info(const std::string &path) {
