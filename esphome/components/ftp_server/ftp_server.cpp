@@ -16,6 +16,8 @@ void FTPServer::setup() { this->base_->add_handler(this); }
 void FTPServer::dump_config() {
   ESP_LOGCONFIG(TAG, "FTP Server:");
   ESP_LOGCONFIG(TAG, "  Address: %s:%u", network::get_use_address().c_str(), this->base_->get_port());
+  ESP_LOGCONFIG(TAG, "  Url Prefix: %s", this->prefix_.c_str());
+  ESP_LOGCONFIG(TAG, "  Root Path: %s", this->root_.c_str());
   ESP_LOGCONFIG(TAG, "  Deletation Enabled: %s", TRUEFALSE(this->deletion_enabled_));
   ESP_LOGCONFIG(TAG, "  Download Enabled : %s", TRUEFALSE(this->download_enabled_));
   ESP_LOGCONFIG(TAG, "  Upload Enabled : %s", TRUEFALSE(this->upload_enabled_));
@@ -332,21 +334,16 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
 }
 
 void FTPServer::handle_delete(AsyncWebServerRequest *request) {
-  // if (!this->deletion_enabled_) {
-  request->send(401, "application/json", "{ \"error\": \"file deletion is disabled\" }");
+  if (!this->deletion_enabled_) {
+    request->send(401, "application/json", "{ \"error\": \"file deletion is disabled\" }");
+    return;
+  }
+  std::string extracted = this->extract_path_from_url(std::string(request->url().c_str()));
+  std::string path = this->build_absolute_path(extracted);
+  this->storage_client_.set_file(path);
+  this->storage_client_.delete_current_file();
+  request->send(204, "application/json", "{}");
   return;
-  // }
-  // std::string extracted = this->extract_path_from_url(std::string(request->url().c_str()));
-  // std::string path = this->build_absolute_path(extracted);
-  // if (this->storage_client_.get_file_info(path).is_directory) {
-  //   request->send(401, "application/json", "{ \"error\": \"cannot delete a directory\" }");
-  //   return;
-  // }
-  // if (this->storage_client_.delete_file(path)) {
-  //   request->send(204, "application/json", "{}");
-  //   return;
-  // }
-  // request->send(401, "application/json", "{ \"error\": \"failed to delete file\" }");
 }
 
 std::string FTPServer::build_prefix() const {
