@@ -1,37 +1,82 @@
 #pragma once
+
+#include <array>
+#include <cstddef>
+#include <list>
+
+#include <fcntl.h>
+
 #include "esphome/core/component.h"
+#include "esphome/core/helpers.h"
 #include "esphome/components/web_server_base/web_server_base.h"
 #include "esphome/components/storage/storage.h"
 
 namespace esphome {
 namespace ftp_server {
 
+constexpr size_t max_read = 1024;
+constexpr size_t max_send = 1024;
+constexpr size_t download_buffer = max_read * 4;
+constexpr bool add_noblock_file = true;
+constexpr bool add_noblock_response = true;
+
 class FTPServer : public Component, public AsyncWebHandler {
  public:
   FTPServer(web_server_base::WebServerBase *);
   void setup() override;
   void dump_config() override;
-  bool canHandle(AsyncWebServerRequest *request);
+  void loop() override;
+
+  bool canHandle(AsyncWebServerRequest *request) override;
   void handleRequest(AsyncWebServerRequest *request) override;
   void handleUpload(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len,
                     bool final) override;
-  bool isRequestHandlerTrivial() { return false; }
+  bool isRequestHandlerTrivial() override { return false; }
 
+  void set_url_prefix(std::string const &);
+  void set_root_path(std::string const &);
+  void set_sd_mmc_card(sd_mmc_card::SdCard *);
   void set_deletion_enabled(bool);
   void set_download_enabled(bool);
   void set_upload_enabled(bool);
-  void set_url_prefix(const std::string &prefix);
-  void set_root_path(const std::string &root);
 
  protected:
   web_server_base::WebServerBase *base_;
   storage::StorageClient storage_client_;
 
+#ifdef USE_ESP_IDF
+  struct DownloadResponse {
+    RingBuffer buffer;
+
+    DownloadResponse(storage::FileInfo file, httpd_req_t *req, size_t len)
+        : file_(file), req_(req), bytes_to_send(len) {
+      file_fd_ = file_.fd();
+      resp_fd_ = httpd_req_to_sockfd(req);
+    }
+    httpd_req_t *req() const { return req_; }
+    storage::FileInfo &file() { return file_; }
+
+   protected:
+    storage::FileInfo file_;
+    httpd_req_t *req_;
+
+   public:
+    int bytes_sent = 0;
+    int bytes_to_send = 0;
+    bool scheduled = false;
+    bool read_done = false;
+    bool completed = false;
+    bool failed = false;
+  };
+  mutable std::list<DownloadResponse> downloadResponses_;
+  mutable Mutex downloadResponses_mutex_;
+#endif  // USE_ESP_IDF
+
+  std::string url_prefix_;
+  std::string root_path_;
   bool deletion_enabled_;
   bool download_enabled_;
   bool upload_enabled_;
-  std::string prefix_;
-  std::string root_;
 
   std::string build_prefix() const;
   std::string extract_path_from_url(std::string const &) const;
@@ -41,32 +86,6 @@ class FTPServer : public Component, public AsyncWebHandler {
   void handle_get(AsyncWebServerRequest *) const;
   void handle_delete(AsyncWebServerRequest *);
   void handle_download(AsyncWebServerRequest *, std::string const &) const;
-};
-
-struct Path {
-  static constexpr char separator = '/';
-
-  /* Return the name of the file */
-  static std::string file_name(std::string const &);
-
-  /* Is the path an absolute path? */
-  static bool is_absolute(std::string const &);
-
-  /* Does the path have a trailing slash? */
-  static bool trailing_slash(std::string const &);
-
-  /* Join two path */
-  static std::string join(std::string const &, std::string const &);
-
-  static std::string remove_root_path(std::string path, std::string const &root);
-
-  static std::vector<std::string> split_path(std::string path);
-
-  static std::string extension(std::string const &);
-
-  static std::string file_type(std::string const &);
-
-  static std::string mime_type(std::string const &);
 };
 
 }  // namespace ftp_server
