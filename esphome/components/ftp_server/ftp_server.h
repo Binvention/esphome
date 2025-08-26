@@ -9,6 +9,7 @@
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
 #include "esphome/components/web_server_base/web_server_base.h"
+#include "esphome/core/ring_buffer.h"
 #include "esphome/components/storage/storage.h"
 
 namespace esphome {
@@ -35,7 +36,6 @@ class FTPServer : public Component, public AsyncWebHandler {
 
   void set_url_prefix(std::string const &);
   void set_root_path(std::string const &);
-  void set_sd_mmc_card(sd_mmc_card::SdCard *);
   void set_deletion_enabled(bool);
   void set_download_enabled(bool);
   void set_upload_enabled(bool);
@@ -49,10 +49,7 @@ class FTPServer : public Component, public AsyncWebHandler {
     RingBuffer buffer;
 
     DownloadResponse(storage::FileInfo file, httpd_req_t *req, size_t len)
-        : file_(file), req_(req), bytes_to_send(len) {
-      file_fd_ = file_.fd();
-      resp_fd_ = httpd_req_to_sockfd(req);
-    }
+        : file_(file), req_(req), bytes_to_send(len) {}
     httpd_req_t *req() const { return req_; }
     storage::FileInfo &file() { return file_; }
 

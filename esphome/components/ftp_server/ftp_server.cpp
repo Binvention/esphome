@@ -126,28 +126,12 @@ void FTPServer::loop() {
     }
   }
 
-  int maxFd = -1;
-  fd_set rfds;
-  fd_set wfds;
   timeval tv = {.tv_sec = 0, .tv_usec = 0};
-  FD_ZERO(&rfds);
-  FD_ZERO(&wfds);
-  int has_write_fd = 0, has_read_fd = 0;
 
   for (auto &&response : this->downloadResponses_) {
     if (response.scheduled) {
       ESP_LOGVV(TAG, "Response is scheduled. Skiped");
       continue;
-    }
-
-    if (!response.completed) {
-      const auto wfd = response.resp_fd();
-      FD_SET(wfd, &wfds);
-      ++has_write_fd;
-      maxFd = std::max(maxFd, wfd);
-      ESP_LOGVV(TAG, "Add write selector %d", wfd);
-    } else {
-      ESP_LOGVV(TAG, "Response already completed. Skipp adding write selector.");
     }
 
     if (!response.buffer.full() && !response.read_done) {
@@ -299,7 +283,7 @@ void FTPServer::handleUpload(AsyncWebServerRequest *request, const String &filen
   std::string path = this->build_absolute_path(extracted);
   ESP_LOGV(TAG, "Upload requested for url %s, path is %s", request->url().c_str(), path.c_str());
 
-  if (index == 0 && !this->sd_mmc_card_->is_directory(path)) {
+  if (index == 0 && !this->storage_client_->get_file_info(path).is_directory) {
     ESP_LOGV(TAG, "It's not a folder");
     auto response = request->beginResponse(401, "application/json", "{ \"error\": \"invalid upload folder\" }");
     response->addHeader("Connection", "close");
@@ -309,10 +293,11 @@ void FTPServer::handleUpload(AsyncWebServerRequest *request, const String &filen
   std::string file_name(filename.c_str());
   if (index == 0) {
     ESP_LOGD(TAG, "uploading file %s to %s", file_name.c_str(), path.c_str());
-    this->sd_mmc_card_->write_file(Path::join(path, file_name).c_str(), data, len);
+    this->storage_client_->set_file(Path::join(path, file_name).c_str());
+    this->storage_client_->write_array(data, len);
     return;
   }
-  this->sd_mmc_card_->append_file(Path::join(path, file_name).c_str(), data, len);
+  this->storage_client_->append_array(data, len);
   if (final) {
     auto response = request->beginResponse(201, "text/html", "upload success");
     response->addHeader("Connection", "close");
@@ -325,8 +310,6 @@ void FTPServer::set_url_prefix(std::string const &prefix) { this->url_prefix_ = 
 
 void FTPServer::set_root_path(std::string const &path) { this->root_path_ = path; }
 
-void FTPServer::set_sd_mmc_card(sd_mmc_card::SdCard *card) { this->sd_mmc_card_ = card; }
-
 void FTPServer::set_deletion_enabled(bool allow) { this->deletion_enabled_ = allow; }
 
 void FTPServer::set_download_enabled(bool allow) { this->download_enabled_ = allow; }
@@ -337,7 +320,7 @@ void FTPServer::handle_get(AsyncWebServerRequest *request) const {
   std::string extracted = this->extract_path_from_url(std::string(request->url().c_str()));
   std::string path = this->build_absolute_path(extracted);
 
-  if (!this->sd_mmc_card_->is_directory(path)) {
+  if (!this->storage_clinet_->get_file_info(path).is_directory) {
     this->handle_download(request, path);
     return;
   }
@@ -345,7 +328,7 @@ void FTPServer::handle_get(AsyncWebServerRequest *request) const {
   this->handle_index(request, path);
 }
 
-void FTPServer::write_row(AsyncResponseStream *response, sd_mmc_card::FileInfo const &info) const {
+void FTPServer::write_row(AsyncResponseStream *response, storage::FileInfo const &info) const {
   std::string uri = "/" + Path::join(this->url_prefix_, Path::remove_root_path(info.path, this->root_path_));
   std::string file_name = Path::file_name(info.path);
   response->print("<tr><td>");
@@ -365,7 +348,7 @@ void FTPServer::write_row(AsyncResponseStream *response, sd_mmc_card::FileInfo c
   }
   response->print("</td><td>");
   if (!info.is_directory) {
-    response->print(sd_mmc_card::format_size(info.size).c_str());
+    response->print(std::string(info.size));
   }
   response->print("</td><td><div class=\"file-actions\">");
   if (!info.is_directory) {
@@ -540,7 +523,7 @@ void FTPServer::handle_index(AsyncWebServerRequest *request, std::string const &
                     "<th>Actions</th>"
                     "</tr></thead><tbody>"));
 
-  auto entries = this->sd_mmc_card_->list_directory_file_info(path, 0);
+  auto entries = this->storage_clinet_->list_directory(path, 0);
   for (auto const &entry : entries)
     write_row(response, entry);
 
@@ -569,7 +552,7 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
   }
 
   const auto open_start_time = esp_timer_get_time();
-  auto file = this->sd_mmc_card_->open(path.c_str(), "rb");
+  auto file = this->storage_clinet_->set_file(path);
   ESP_LOGV(TAG, "open(%s) (%llu us)", path.c_str(), esp_timer_get_time() - open_start_time);
   if (!file) {
     request->send(401, "application/json", "{ \"error\": \"failed to open file\" }");
@@ -763,15 +746,15 @@ void FTPServer::handle_delete(AsyncWebServerRequest *request) {
   }
   std::string extracted = this->extract_path_from_url(std::string(request->url().c_str()));
   std::string path = this->build_absolute_path(extracted);
-  if (this->sd_mmc_card_->is_directory(path)) {
+  if (this->storage_client_->get_file_info(path).is_directory) {
     request->send(401, "application/json", "{ \"error\": \"cannot delete a directory\" }");
     return;
   }
-  if (this->sd_mmc_card_->delete_file(path)) {
-    request->send(204, "application/json", "{}");
-    return;
-  }
-  request->send(401, "application/json", "{ \"error\": \"failed to delete file\" }");
+  this->storage_client_->set_file(path);
+  this->storage_client_->delete_current_file() request->send(204, "application/json", "{}");
+  return;
+
+  // request->send(401, "application/json", "{ \"error\": \"failed to delete file\" }");
 }
 
 std::string FTPServer::build_prefix() const {
