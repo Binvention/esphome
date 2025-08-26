@@ -126,6 +126,8 @@ void FTPServer::loop() {
     }
   }
 
+  storage::FileInfo read_file;
+  storage::FileInfo write_file;
   timeval tv = {.tv_sec = 0, .tv_usec = 0};
 
   for (auto &&response : this->downloadResponses_) {
@@ -134,51 +136,38 @@ void FTPServer::loop() {
       continue;
     }
 
-    if (!response.buffer.full() && !response.read_done) {
-      const auto rfd = response.file_fd();
-      FD_SET(rfd, &rfds);
-      ++has_read_fd;
-      maxFd = std::max(maxFd, rfd);
-      ESP_LOGVV(TAG, "Add read selector %d", rfd);
+    // write_file = response.file();
+    if (!(response.buffer.free() > 0) && !response.read_done) {
+      read_file = response.file();
+      ESP_LOGVV(TAG, "Add read selector %d", file.read_offset);
     } else {
-      ESP_LOGVV(TAG, "Buffer full: %i, Read done: %i. Skipp adding read selector.", response.buffer.full(),
+      ESP_LOGVV(TAG, "Buffer full: %i, Read done: %i. Skipp adding read selector.", response.buffer.free(),
                 response.read_done);
     }
   }
 
-  if (has_read_fd || has_write_fd) {
-    const auto s = select(maxFd + 1, has_read_fd ? &rfds : nullptr, has_write_fd ? &wfds : nullptr, nullptr, &tv);
-    // ESP_LOGVV(TAG, "select(%d, ...) returned %d", maxFd + 1, s);
-    if (s == 0) {
-      return;
-    } else if (s < 0) {
-      ESP_LOGE(TAG, "select(%d, ...) -> %d call failed: %s", maxFd + 1, s, strerror(errno));
-    }
+  if (read_file.path.empty() && write_file_path.empty()) {
+    return;
   }
-
   // schedule transfer
   for (auto &&response : this->downloadResponses_) {
     if (response.scheduled)
       continue;
 
-    const auto to_read =
-        std::min<size_t>(std::min<size_t>(response.buffer.bytes_to_write(), response.bytes_to_send), max_read);
-    if (FD_ISSET(response.file_fd(), &rfds) && response.buffer.bytes_to_write() >= max_read && to_read != 0 &&
-        !response.read_done) {
+    const auto to_read = response.buffer.free();
+    if (to_read != 0 && !response.read_done) {
       const auto start_time = esp_timer_get_time();
-      const auto read_bytes = response.file().read(response.buffer.write_ptr(), to_read);
+      this->storage_client_.set_file(read_file);
+      uint8_t temp_array[to_read];
+      const auto read_bytes = this->storage_client_.read_array(temp_array, to_read);
+      response.buffer.write_without_replacement(temp_array, read_bytes, pdMS_TO_TICKS(20));
       // read(response.file_fd(), response.buffer.write_ptr(), to_read);
 
-      ESP_LOGVV(TAG, "read(%d, %p, %d) returned %d (%lld us)", response.file_fd(), response.buffer.write_ptr(), to_read,
-                read_bytes, esp_timer_get_time() - start_time);
-      if (read_bytes < 0) {
-        ESP_LOGE(TAG, "read call failed: %s", strerror(errno));
-        response.failed = true;
-      } else if (read_bytes == 0) {
+      ESP_LOGVV(TAG, "read %d bytes from %s", read_bytes, read_file.path);
+      if (read_bytes == 0) {
         ESP_LOGV(TAG, "reading is done");
         response.read_done = true;
       } else {
-        response.buffer.submit_write(read_bytes);
         response.bytes_to_send -= read_bytes;
         if (response.bytes_to_send == 0) {
           ESP_LOGV(TAG, "reading part is done");
@@ -188,25 +177,24 @@ void FTPServer::loop() {
       // ESP_LOGVV(TAG, "buffer: read: %p + %d, write: %p + %d", response.buffer.read_ptr(),
       //           response.buffer.bytes_to_read(), response.buffer.write_ptr(), response.buffer.bytes_to_write());
     } else {
-      ESP_LOGVV(TAG, "Read skip: is_set: %ld,  has space: %u, not full: %d, not done: %d, to read: %d",
-                FD_ISSET(response.file_fd(), &rfds), response.buffer.bytes_to_write(), !response.buffer.full(),
+      ESP_LOGVV(TAG, "Read skip:  available buffer: %d,  not done: %d, to read: %d", response.buffer.free(),
                 !response.read_done, to_read);
     }
 
-    if (FD_ISSET(response.resp_fd(), &wfds) && (response.read_done || !response.buffer.empty())) {
+    if ((response.read_done || response.buffer.available() > 0)) {
       response.scheduled = true;
       const auto err = httpd_queue_work(
           response.req()->handle,
           [](void *p) {
             auto &response = *reinterpret_cast<DownloadResponse *>(p);
-            const auto to_send = std::min<size_t>(max_send, response.buffer.bytes_to_read());
+            const auto to_send = response.buffer.available();
             if (to_send) {
               const auto start_time = esp_timer_get_time();
-              const auto sent = httpd_send(response.req(), response.buffer.read_ptr(), to_send);
+              uint8_t temp_array[to_send];
+              response.buffer.read(temp_array, to_send, pdMS_TO_TICKS(20)) const auto sent =
+                  httpd_send(response.req(), temp_array, to_send);
               // const auto sent = httpd_socket_send(response.req()->handle, response.resp_fd(),
               // response.buffer.read_ptr(), to_send, O_NONBLOCK);
-              ESP_LOGVV(TAG, "httpd_send(%p, %p, %d) returned %d (%lld us)", response.req(), response.buffer.read_ptr(),
-                        to_send, sent, esp_timer_get_time() - start_time);
 
               if (sent < 0) {
                 if (sent == -3) {
@@ -223,7 +211,7 @@ void FTPServer::loop() {
             // ESP_LOGVV(TAG, "buffer: read: %p + %d, write: %p + %d", response.buffer.read_ptr(),
             //           response.buffer.bytes_to_read(), response.buffer.write_ptr(),
             //           response.buffer.bytes_to_write());
-            if (!response.failed && response.read_done && response.buffer.empty()) {
+            if (!response.failed && response.read_done && response.buffer.available()) {
               ESP_LOGV(TAG, "Response completed");
               esp_http_server_event_data evt_data = {
                   .fd = response.resp_fd(),
@@ -242,7 +230,7 @@ void FTPServer::loop() {
       }
     } else {
       ESP_LOGVV(TAG, "Send skip: is_set: %ld, read done: %d, not empty: %d", FD_ISSET(response.resp_fd(), &wfds),
-                response.read_done, !response.buffer.empty());
+                response.read_done, !response.buffer.available());
     }
   }
 #endif  // USE_ESP_IDF
