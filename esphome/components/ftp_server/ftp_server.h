@@ -32,7 +32,7 @@ class FTPServer : public Component, public AsyncWebHandler {
   void handleRequest(AsyncWebServerRequest *request);
   void handleUpload(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len,
                     bool final) override;
-  bool isRequestHandlerTrivial() override { return false; }
+  bool isRequestHandlerTrivial() { return false; }
 
   void set_url_prefix(std::string const &);
   void set_root_path(std::string const &);
@@ -49,13 +49,17 @@ class FTPServer : public Component, public AsyncWebHandler {
     RingBuffer buffer;
 
     DownloadResponse(storage::FileInfo file, httpd_req_t *req, size_t len)
-        : file_(file), req_(req), bytes_to_send(len) {}
+        : file_(file), req_(req), bytes_to_send(len) {
+      resp_fd_ = httpd_req_to_sockfd(req);
+    }
+    int resp_fd() const { return resp_fd_; }
     httpd_req_t *req() const { return req_; }
     storage::FileInfo &file() { return file_; }
 
    protected:
     storage::FileInfo file_;
     httpd_req_t *req_;
+    int resp_fd_;
 
    public:
     int bytes_sent = 0;

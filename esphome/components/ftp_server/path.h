@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace esphome {
-namespace sd_file_server {
+namespace ftp_server {
 
 struct Path {
   static constexpr char separator = '/';
@@ -32,5 +32,5 @@ struct Path {
   static std::string mime_type(std::string const &);
 };
 
-}  // namespace sd_file_server
+}  // namespace ftp_server
 }  // namespace esphome

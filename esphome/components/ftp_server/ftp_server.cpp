@@ -139,14 +139,14 @@ void FTPServer::loop() {
     // write_file = response.file();
     if (!(response.buffer.free() > 0) && !response.read_done) {
       read_file = response.file();
-      ESP_LOGVV(TAG, "Add read selector %d", file.read_offset);
+      ESP_LOGVV(TAG, "Add read selector %d", read_file.read_offset);
     } else {
       ESP_LOGVV(TAG, "Buffer full: %i, Read done: %i. Skipp adding read selector.", response.buffer.free(),
                 response.read_done);
     }
   }
 
-  if (read_file.path.empty() && write_file_path.empty()) {
+  if (read_file.path.empty() && write_file.path.empty()) {
     return;
   }
   // schedule transfer
@@ -191,8 +191,8 @@ void FTPServer::loop() {
             if (to_send) {
               const auto start_time = esp_timer_get_time();
               uint8_t temp_array[to_send];
-              response.buffer.read(temp_array, to_send, pdMS_TO_TICKS(20)) const auto sent =
-                  httpd_send(response.req(), temp_array, to_send);
+              response.buffer.read(temp_array, to_send, pdMS_TO_TICKS(20));
+              const auto sent = httpd_send(response.req(), temp_array, to_send);
               // const auto sent = httpd_socket_send(response.req()->handle, response.resp_fd(),
               // response.buffer.read_ptr(), to_send, O_NONBLOCK);
 
@@ -271,7 +271,7 @@ void FTPServer::handleUpload(AsyncWebServerRequest *request, const String &filen
   std::string path = this->build_absolute_path(extracted);
   ESP_LOGV(TAG, "Upload requested for url %s, path is %s", request->url().c_str(), path.c_str());
 
-  if (index == 0 && !this->storage_client_->get_file_info(path).is_directory) {
+  if (index == 0 && !this->storage_client_.get_file_info(path).is_directory) {
     ESP_LOGV(TAG, "It's not a folder");
     auto response = request->beginResponse(401, "application/json", "{ \"error\": \"invalid upload folder\" }");
     response->addHeader("Connection", "close");
@@ -281,11 +281,11 @@ void FTPServer::handleUpload(AsyncWebServerRequest *request, const String &filen
   std::string file_name(filename.c_str());
   if (index == 0) {
     ESP_LOGD(TAG, "uploading file %s to %s", file_name.c_str(), path.c_str());
-    this->storage_client_->set_file(Path::join(path, file_name).c_str());
-    this->storage_client_->write_array(data, len);
+    this->storage_client_.set_file(Path::join(path, file_name).c_str());
+    this->storage_client_.write_array(data, len);
     return;
   }
-  this->storage_client_->append_array(data, len);
+  this->storage_client_.append_array(data, len);
   if (final) {
     auto response = request->beginResponse(201, "text/html", "upload success");
     response->addHeader("Connection", "close");
@@ -734,12 +734,12 @@ void FTPServer::handle_delete(AsyncWebServerRequest *request) {
   }
   std::string extracted = this->extract_path_from_url(std::string(request->url().c_str()));
   std::string path = this->build_absolute_path(extracted);
-  if (this->storage_client_->get_file_info(path).is_directory) {
+  if (this->storage_client_.get_file_info(path).is_directory) {
     request->send(401, "application/json", "{ \"error\": \"cannot delete a directory\" }");
     return;
   }
-  this->storage_client_->set_file(path);
-  this->storage_client_->delete_current_file() request->send(204, "application/json", "{}");
+  this->storage_client_.set_file(path);
+  this->storage_client_.delete_current_file() request->send(204, "application/json", "{}");
   return;
 
   // request->send(401, "application/json", "{ \"error\": \"failed to delete file\" }");

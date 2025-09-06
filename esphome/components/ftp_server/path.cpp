@@ -7,7 +7,7 @@
 #include <map>
 
 namespace esphome {
-namespace sd_file_server {
+namespace ftp_server {
 
 static const char *TAG = "sd_file_server_path";
 
@@ -102,5 +102,5 @@ std::string Path::mime_type(std::string const &file) {
   return "application/octet-stream";
 }
 
-}  // namespace sd_file_server
+}  // namespace ftp_server
 }  // namespace esphome
