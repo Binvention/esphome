@@ -191,8 +191,8 @@ void FTPServer::loop() {
             if (to_send) {
               const auto start_time = esp_timer_get_time();
               uint8_t temp_array[to_send];
-              response.buffer.read(temp_array, to_send, pdMS_TO_TICKS(20));
-              const auto sent = httpd_send(response.req(), temp_array, to_send);
+              int num_ready = esponse.buffer.read(temp_array, to_send, 0);
+              const auto sent = httpd_send(response.req(), &(temp_array[0]), num_read =);
               // const auto sent = httpd_socket_send(response.req()->handle, response.resp_fd(),
               // response.buffer.read_ptr(), to_send, O_NONBLOCK);
 
@@ -204,7 +204,10 @@ void FTPServer::loop() {
                 ESP_LOGE(TAG, "httpd_send failed: %s", esp_err_to_name(sent));
                 response.failed = true;
               } else {
-                response.buffer.submit_read(sent);
+                if (sent != num_ready) {
+                  ESP_LOGE(TAG, "wasn't able to send all the bytes read from file. Read: %0d\tSent: %0d", num_ready,
+                           sent);
+                }
                 response.bytes_sent += sent;
               }
             }
@@ -229,8 +232,8 @@ void FTPServer::loop() {
         ESP_LOGE(TAG, "httpd_queue_work failed: %s", esp_err_to_name(err));
       }
     } else {
-      ESP_LOGVV(TAG, "Send skip: is_set: %ld, read done: %d, not empty: %d", FD_ISSET(response.resp_fd(), &wfds),
-                response.read_done, !response.buffer.available());
+      // ESP_LOGVV(TAG, "Send skip: is_set: %ld, read done: %d, not empty: %d", FD_ISSET(response.resp_fd(), &wfds),
+      //           response.read_done, !response.buffer.available());
     }
   }
 #endif  // USE_ESP_IDF
@@ -308,7 +311,7 @@ void FTPServer::handle_get(AsyncWebServerRequest *request) const {
   std::string extracted = this->extract_path_from_url(std::string(request->url().c_str()));
   std::string path = this->build_absolute_path(extracted);
 
-  if (!this->storage_clinet_->get_file_info(path).is_directory) {
+  if (!this->storage_client_.get_file_info(path).is_directory) {
     this->handle_download(request, path);
     return;
   }
@@ -511,7 +514,7 @@ void FTPServer::handle_index(AsyncWebServerRequest *request, std::string const &
                     "<th>Actions</th>"
                     "</tr></thead><tbody>"));
 
-  auto entries = this->storage_clinet_->list_directory(path, 0);
+  auto entries = this->storage_client_.list_directory(path, 0);
   for (auto const &entry : entries)
     write_row(response, entry);
 
@@ -540,7 +543,7 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
   }
 
   const auto open_start_time = esp_timer_get_time();
-  auto file = this->storage_clinet_->set_file(path);
+  auto file = this->storage_client_.set_file(path);
   ESP_LOGV(TAG, "open(%s) (%llu us)", path.c_str(), esp_timer_get_time() - open_start_time);
   if (!file) {
     request->send(401, "application/json", "{ \"error\": \"failed to open file\" }");
