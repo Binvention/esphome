@@ -457,26 +457,26 @@ void FTPServer::handle_index(AsyncWebServerRequest *request, std::string const &
 }
 
 void FTPServer::handle_download(AsyncWebServerRequest *request, std::string const &path) {
-  if (!this->download_enabled_) {
-    request->send(401, "application/json", "{ \"error\": \"file download is disabled\" }");
-    return;
-  }
+  // if (!this->download_enabled_) {
+  //   request->send(401, "application/json", "{ \"error\": \"file download is disabled\" }");
+  //   return;
+  // }
 
-  const auto open_start_time = esp_timer_get_time();
-  auto file = storage_client_.get_file_info(path);
-  ESP_LOGV(TAG, "open(%s) (%llu us)", path.c_str(), esp_timer_get_time() - open_start_time);
-  if (!(file.size)) {
-    request->send(401, "application/json", "{ \"error\": \"failed to open file\" }");
-    return;
-  }
-  storage_client_.set_file(file);
+  // const auto open_start_time = esp_timer_get_time();
+  // auto file = storage_client_.get_file_info(path);
+  // ESP_LOGV(TAG, "open(%s) (%llu us)", path.c_str(), esp_timer_get_time() - open_start_time);
+  // if (!(file.size)) {
+  //   request->send(401, "application/json", "{ \"error\": \"failed to open file\" }");
+  //   return;
+  // }
+  // storage_client_.set_file(file);
 
-  const auto download = [&] {
-    const auto param = request->getParam("download");
-    return param && param->value() == "true";
-  }();
+  // const auto download = [&] {
+  //   const auto param = request->getParam("download");
+  //   return param && param->value() == "true";
+  // }();
 
-  request->send(request->beginResponse(file, path, download));
+  // request->send(request->beginResponse(file, path, download));
 }
 
 void FTPServer::handle_delete(AsyncWebServerRequest *request) {
