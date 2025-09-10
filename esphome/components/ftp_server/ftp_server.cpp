@@ -307,7 +307,7 @@ void FTPServer::set_download_enabled(bool allow) { this->download_enabled_ = all
 
 void FTPServer::set_upload_enabled(bool allow) { this->upload_enabled_ = allow; }
 
-void FTPServer::handle_get(AsyncWebServerRequest *request) const {
+void FTPServer::handle_get(AsyncWebServerRequest *request) {
   std::string extracted = this->extract_path_from_url(std::string(request->url().c_str()));
   std::string path = this->build_absolute_path(extracted);
 
@@ -536,7 +536,7 @@ void FTPServer::handle_index(AsyncWebServerRequest *request, std::string const &
   request->send(response);
 }
 
-void FTPServer::handle_download(AsyncWebServerRequest *request, std::string const &path) const {
+void FTPServer::handle_download(AsyncWebServerRequest *request, std::string const &path) {
   if (!this->download_enabled_) {
     request->send(401, "application/json", "{ \"error\": \"file download is disabled\" }");
     return;
@@ -544,12 +544,12 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
 
   const auto open_start_time = esp_timer_get_time();
   auto file = storage_client_.get_file_info(path);
-  storage_client_.set_file(file);
   ESP_LOGV(TAG, "open(%s) (%llu us)", path.c_str(), esp_timer_get_time() - open_start_time);
-  if (!file) {
+  if (!(file.size)) {
     request->send(401, "application/json", "{ \"error\": \"failed to open file\" }");
     return;
   }
+  storage_client_.set_file(file);
 
   const auto download = [&] {
     const auto param = request->getParam("download");
@@ -558,7 +558,7 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
 
 #ifdef USE_ESP_IDF
   const auto size_start_time = esp_timer_get_time();
-  const auto data_len = file.size();
+  const auto data_len = file.size;
 
   std::optional<size_t> range_begin;
   std::optional<size_t> range_end;
@@ -666,7 +666,8 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
       return;
     }
     if (range_begin && *range_begin != 0) {
-      file.seek(*range_begin);
+      file.read_offset = range_begin;
+      storage_client_.set_file(file);
     }
     httpd_print(*request, "HTTP/1.1 206 Partial Content\r\n");
     httpd_printf(*request, "Content-Type: %s\r\n", Path::mime_type(path).c_str());
@@ -682,18 +683,18 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
                  HTTPD_200, Path::mime_type(path).c_str(), data_len);
   }
 
-  struct stat file_stat;
-  if (-1 == fstat(file.fd(), &file_stat) && file_stat.st_mtime) {
-    ESP_LOGE(TAG, "fstat call failed: %s", strerror(errno));
-  } else if (file_stat.st_mtime == 0) {
-    ESP_LOGI(TAG, "st_mtime is 0. Not sending.");
-  } else {
-    time_t mtime = file_stat.st_mtime;
-    struct tm *tm_info = gmtime(&mtime);
-    char buffer[128];
-    if (0 != strftime(buffer, sizeof(buffer), "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", tm_info))
-      httpd_print(*request, buffer);
-  }
+  // struct stat file_stat;
+  // if (-1 == fstat(file.fd(), &file_stat) && file_stat.st_mtime) {
+  //   ESP_LOGE(TAG, "fstat call failed: %s", strerror(errno));
+  // } else if (file_stat.st_mtime == 0) {
+  //   ESP_LOGI(TAG, "st_mtime is 0. Not sending.");
+  // } else {
+  //   time_t mtime = file_stat.st_mtime;
+  //   struct tm *tm_info = gmtime(&mtime);
+  //   char buffer[128];
+  //   if (0 != strftime(buffer, sizeof(buffer), "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", tm_info))
+  //     httpd_print(*request, buffer);
+  // }
 
   httpd_print(*request, "Cache-Control: no-cache\r\n");
   httpd_print(*request, "Accept-Ranges: bytes\r\n");
@@ -711,10 +712,10 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "httpd_req_async_handler_begin failed: %s", esp_err_to_name(err));
   } else {
-    if (add_noblock_file) {
-      int file_flags = fcntl(file.fd(), F_GETFL, 0);
-      fcntl(file.fd(), F_SETFL, file_flags | O_NONBLOCK);
-    }
+    // if (add_noblock_file) {
+    //   int file_flags = fcntl(file.fd(), F_GETFL, 0);
+    //   fcntl(file.fd(), F_SETFL, file_flags | O_NONBLOCK);
+    // }
 
     if (add_noblock_response) {
       auto resp_fd = httpd_req_to_sockfd(*request);
@@ -743,7 +744,8 @@ void FTPServer::handle_delete(AsyncWebServerRequest *request) {
     return;
   }
   this->storage_client_.set_file(path);
-  this->storage_client_.delete_current_file() request->send(204, "application/json", "{}");
+  this->storage_client_.delete_current_file();
+  request->send(204, "application/json", "{}");
   return;
 
   // request->send(401, "application/json", "{ \"error\": \"failed to delete file\" }");
