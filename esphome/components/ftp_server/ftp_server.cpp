@@ -192,7 +192,7 @@ void FTPServer::loop() {
               const auto start_time = esp_timer_get_time();
               uint8_t temp_array[to_send];
               int num_ready = response.buffer.read(temp_array, to_send, 0);
-              const auto sent = httpd_send(response.req(), &(temp_array[0]), num_ready);
+              const auto sent = httpd_send(response.req(), (char *) &(temp_array[0]), num_ready);
               // const auto sent = httpd_socket_send(response.req()->handle, response.resp_fd(),
               // response.buffer.read_ptr(), to_send, O_NONBLOCK);
 
