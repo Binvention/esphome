@@ -191,8 +191,8 @@ void FTPServer::loop() {
             if (to_send) {
               const auto start_time = esp_timer_get_time();
               uint8_t temp_array[to_send];
-              int num_ready = esponse.buffer.read(temp_array, to_send, 0);
-              const auto sent = httpd_send(response.req(), &(temp_array[0]), num_read =);
+              int num_ready = response.buffer.read(temp_array, to_send, 0);
+              const auto sent = httpd_send(response.req(), &(temp_array[0]), num_ready);
               // const auto sent = httpd_socket_send(response.req()->handle, response.resp_fd(),
               // response.buffer.read_ptr(), to_send, O_NONBLOCK);
 
@@ -339,7 +339,7 @@ void FTPServer::write_row(AsyncResponseStream *response, storage::FileInfo const
   }
   response->print("</td><td>");
   if (!info.is_directory) {
-    response->print(std::string(info.size));
+    response->print(std::to_string(info.size));
   }
   response->print("</td><td><div class=\"file-actions\">");
   if (!info.is_directory) {
@@ -514,7 +514,7 @@ void FTPServer::handle_index(AsyncWebServerRequest *request, std::string const &
                     "<th>Actions</th>"
                     "</tr></thead><tbody>"));
 
-  auto entries = this->storage_client_.list_directory(path, 0);
+  auto entries = this->storage_client_.list_directory(path);
   for (auto const &entry : entries)
     write_row(response, entry);
 
