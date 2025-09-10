@@ -666,7 +666,7 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
       return;
     }
     if (range_begin && *range_begin != 0) {
-      file.read_offset = range_begin;
+      file.read_offset = *range_begin;
       storage_client_.set_file(file);
     }
     httpd_print(*request, "HTTP/1.1 206 Partial Content\r\n");
