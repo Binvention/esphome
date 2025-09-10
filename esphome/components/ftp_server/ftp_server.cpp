@@ -543,7 +543,8 @@ void FTPServer::handle_download(AsyncWebServerRequest *request, std::string cons
   }
 
   const auto open_start_time = esp_timer_get_time();
-  auto file = this->storage_client_.set_file(path);
+  auto file = storage_client_.get_file_info(path);
+  storage_client_.set_file(file);
   ESP_LOGV(TAG, "open(%s) (%llu us)", path.c_str(), esp_timer_get_time() - open_start_time);
   if (!file) {
     request->send(401, "application/json", "{ \"error\": \"failed to open file\" }");
