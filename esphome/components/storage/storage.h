@@ -64,6 +64,7 @@ class Storage : public EntityBase {
 class StorageClient : public EntityBase {
  public:
   std::vector<FileInfo> list_directory(const std::string &path) const;
+  std::vector<std::string> list_storages() const;
   FileInfo get_file_info(const std::string &path) const;
   void set_file(const std::string &path);
   void delete_current_file();

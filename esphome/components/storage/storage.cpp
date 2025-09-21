@@ -112,6 +112,14 @@ std::vector<FileInfo> StorageClient::list_directory(const std::string &path) con
   return result;
 }
 
+std::vector<std::string> StorageClient::list_storages() const {
+  std::vector<std::string> result;
+  for (auto i = storages.begin(); i != storages.end(); i++) {
+    result.push_back(i->first);
+  }
+  return result;
+}
+
 FileInfo StorageClient::get_file_info(const std::string &path) const {
   int prefix_end = path.find("://");
   if (prefix_end < 0) {
