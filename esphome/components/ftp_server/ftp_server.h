@@ -83,10 +83,10 @@ class FTPServer : public Component, public AsyncWebHandler {
   std::string extract_path_from_url(std::string const &) const;
   std::string build_absolute_path(std::string) const;
   void write_row(AsyncResponseStream *response, storage::FileInfo const &info) const;
-  void handle_index(AsyncWebServerRequest *, std::string const &) const;
+  void handle_index(AsyncWebServerRequest *, storage::FileInfo const &) const;
   void handle_get(AsyncWebServerRequest *);
   void handle_delete(AsyncWebServerRequest *);
-  void handle_download(AsyncWebServerRequest *, std::string const &);
+  void handle_download(AsyncWebServerRequest *, storage::FileInfo const &);
 };
 
 }  // namespace ftp_server
