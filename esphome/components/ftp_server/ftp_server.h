@@ -28,8 +28,8 @@ class FTPServer : public Component, public AsyncWebHandler {
   void dump_config() override;
   void loop() override;
 
-  bool canHandle(AsyncWebServerRequest *request);
-  void handleRequest(AsyncWebServerRequest *request);
+  bool canHandle(AsyncWebServerRequest *request) const override;
+  void handleRequest(AsyncWebServerRequest *request) override;
   void handleUpload(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len,
                     bool final) override;
   bool isRequestHandlerTrivial() { return false; }

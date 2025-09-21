@@ -38,7 +38,7 @@ void FTPServer::dump_config() {
 
 void FTPServer::loop() {}
 
-bool FTPServer::canHandle(AsyncWebServerRequest *request) {
+bool FTPServer::canHandle(AsyncWebServerRequest *request) const {
   ESP_LOGD(TAG, "can handle %s %u", request->url().c_str(),
            str_startswith(std::string(request->url().c_str()), this->build_prefix()));
   return str_startswith(std::string(request->url().c_str()), this->build_prefix());
