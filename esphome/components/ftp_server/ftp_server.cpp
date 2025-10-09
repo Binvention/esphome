@@ -57,14 +57,17 @@ void FTPServer::handleRequest(AsyncWebServerRequest *request) {
       case HTTP_DELETE:
         this->handle_delete(request);
         break;
+      case HTTP_POST:
+        this->handle_upload(request);
+
+        break;
       default:
         break;
     }
   }
 }
 
-void FTPServer::handleUpload(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
-                             size_t len, bool final) {
+void FTPServer::handleUpload(AsyncWebServerRequest *request) {
   if (!this->upload_enabled_) {
     request->send(401, "application/json", "{ \"error\": \"file upload is disabled\" }");
     return;
@@ -166,7 +169,7 @@ void FTPServer::handle_index(AsyncWebServerRequest *request, storage::FileInfo c
   <head>
     <meta charset=UTF-8>
     <meta name=viewport content=\"width=device-width, initial-scale=1,user-scalable=no\">
-    <title>SD Card Files</title>
+    <title>ESP Home Files</title>
     <style>
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
@@ -276,7 +279,7 @@ void FTPServer::handle_index(AsyncWebServerRequest *request, storage::FileInfo c
   <body>
   <div class="container">
     <div class="header-actions">
-      <h1>SD Card Files</h1>
+      <h1>ESP Home Files</h1>
       <button onclick="window.location.href='/'">Go to web server</button>
     </div>
     <div class="breadcrumb">
@@ -337,26 +340,26 @@ void FTPServer::handle_index(AsyncWebServerRequest *request, storage::FileInfo c
 }
 
 void FTPServer::handle_download(AsyncWebServerRequest *request, storage::FileInfo const &path) {
-  // if (!this->download_enabled_) {
-  //   request->send(401, "application/json", "{ \"error\": \"file download is disabled\" }");
-  //   return;
-  // }
+  if (!this->download_enabled_) {
+    request->send(401, "application/json", "{ \"error\": \"file download is disabled\" }");
+    return;
+  }
 
-  // const auto open_start_time = esp_timer_get_time();
-  // auto file = storage_client_.get_file_info(path);
-  // ESP_LOGV(TAG, "open(%s) (%llu us)", path.c_str(), esp_timer_get_time() - open_start_time);
-  // if (!(file.size)) {
-  //   request->send(401, "application/json", "{ \"error\": \"failed to open file\" }");
-  //   return;
-  // }
-  // storage_client_.set_file(file);
+  const auto open_start_time = esp_timer_get_time();
+  auto file = storage_client_.get_file_info(path);
+  ESP_LOGV(TAG, "open(%s) (%llu us)", path.c_str(), esp_timer_get_time() - open_start_time);
+  if (!(file.size)) {
+    request->send(401, "application/json", "{ \"error\": \"failed to open file\" }");
+    return;
+  }
+  storage_client_.set_file(file);
 
-  // const auto download = [&] {
-  //   const auto param = request->getParam("download");
-  //   return param && param->value() == "true";
-  // }();
+  const auto download = [&] {
+    const auto param = request->getParam("download");
+    return param && param->value() == "true";
+  }();
 
-  // request->send(request->beginResponse(file, path, download));
+  request->send(request->beginResponse(file, path, download));
 }
 
 void FTPServer::handle_delete(AsyncWebServerRequest *request) {

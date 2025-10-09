@@ -44,4 +44,4 @@ async def to_code(config):
     cg.add(var.set_download_enabled(config[CONF_ENABLE_DOWNLOAD]))
     cg.add(var.set_upload_enabled(config[CONF_ENABLE_UPLOAD]))
     cg.add(var.set_root_path(config[CONF_ROOT_PATH]))
-    cg.add(var.set_url_prefix(config[CONF_URL_PREFIX]))
+    cg.add(var.set_url_prefix(config[CONF_URL_PREFIX]).lstrip("/"))
