@@ -4,8 +4,7 @@
 #ifdef USE_API
 #include "esphome/core/component.h"
 #include "esphome/core/component_iterator.h"
-namespace esphome {
-namespace api {
+namespace esphome::api {
 
 class APIConnection;
 
@@ -44,7 +43,7 @@ class ListEntitiesIterator : public ComponentIterator {
 #ifdef USE_TEXT_SENSOR
   bool on_text_sensor(text_sensor::TextSensor *entity) override;
 #endif
-#ifdef USE_API_SERVICES
+#ifdef USE_API_USER_DEFINED_ACTIONS
   bool on_service(UserServiceDescriptor *service) override;
 #endif
 #ifdef USE_CAMERA
@@ -96,6 +95,5 @@ class ListEntitiesIterator : public ComponentIterator {
   APIConnection *client_;
 };
 
-}  // namespace api
-}  // namespace esphome
+}  // namespace esphome::api
 #endif

@@ -10,7 +10,7 @@
 
 namespace esphome {
 
-#ifdef USE_API_SERVICES
+#ifdef USE_API_USER_DEFINED_ACTIONS
 namespace api {
 class UserServiceDescriptor;
 }  // namespace api
@@ -45,7 +45,7 @@ class ComponentIterator {
 #ifdef USE_TEXT_SENSOR
   virtual bool on_text_sensor(text_sensor::TextSensor *text_sensor) = 0;
 #endif
-#ifdef USE_API_SERVICES
+#ifdef USE_API_USER_DEFINED_ACTIONS
   virtual bool on_service(api::UserServiceDescriptor *service);
 #endif
 #ifdef USE_CAMERA
@@ -122,7 +122,7 @@ class ComponentIterator {
 #ifdef USE_TEXT_SENSOR
     TEXT_SENSOR,
 #endif
-#ifdef USE_API_SERVICES
+#ifdef USE_API_USER_DEFINED_ACTIONS
     SERVICE,
 #endif
 #ifdef USE_CAMERA
@@ -168,13 +168,24 @@ class ComponentIterator {
     UPDATE,
 #endif
     MAX,
-  } state_{IteratorState::NONE};
+  };
   uint16_t at_{0};  // Supports up to 65,535 entities per type
+  IteratorState state_{IteratorState::NONE};
   bool include_internal_{false};
 
-  template<typename PlatformItem>
-  void process_platform_item_(const std::vector<PlatformItem *> &items,
-                              bool (ComponentIterator::*on_item)(PlatformItem *));
+  template<typename Container>
+  void process_platform_item_(const Container &items,
+                              bool (ComponentIterator::*on_item)(typename Container::value_type)) {
+    if (this->at_ >= items.size()) {
+      this->advance_platform_();
+    } else {
+      typename Container::value_type item = items[this->at_];
+      if ((item->is_internal() && !this->include_internal_) || (this->*on_item)(item)) {
+        this->at_++;
+      }
+    }
+  }
+
   void advance_platform_();
 };
 
