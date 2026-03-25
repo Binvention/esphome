@@ -17,9 +17,13 @@ from esphome.const import (
     DEVICE_CLASS_RESTART,
     DEVICE_CLASS_UPDATE,
 )
-from esphome.core import CORE, coroutine_with_priority
+from esphome.core import CORE, CoroPriority, coroutine_with_priority
+from esphome.core.entity_helpers import (
+    entity_duplicate_validator,
+    setup_device_class,
+    setup_entity,
+)
 from esphome.cpp_generator import MockObjClass
-from esphome.cpp_helpers import setup_entity
 
 CODEOWNERS = ["@esphome/core"]
 IS_PLATFORM_COMPONENT = True
@@ -44,7 +48,7 @@ ButtonPressTrigger = button_ns.class_(
 validate_device_class = cv.one_of(*DEVICE_CLASSES, lower=True, space="_")
 
 
-BUTTON_SCHEMA = (
+_BUTTON_SCHEMA = (
     cv.ENTITY_BASE_SCHEMA.extend(web_server.WEBSERVER_SORTING_SCHEMA)
     .extend(cv.MQTT_COMMAND_COMPONENT_SCHEMA)
     .extend(
@@ -59,6 +63,9 @@ BUTTON_SCHEMA = (
         }
     )
 )
+
+
+_BUTTON_SCHEMA.add_extra(entity_duplicate_validator("button"))
 
 
 def button_schema(
@@ -78,18 +85,16 @@ def button_schema(
         if default is not cv.UNDEFINED:
             schema[cv.Optional(key, default=default)] = validator
 
-    return BUTTON_SCHEMA.extend(schema)
+    return _BUTTON_SCHEMA.extend(schema)
 
 
+@setup_entity("button")
 async def setup_button_core_(var, config):
-    await setup_entity(var, config)
-
     for conf in config.get(CONF_ON_PRESS, []):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID], var)
         await automation.build_automation(trigger, [], conf)
 
-    if device_class := config.get(CONF_DEVICE_CLASS):
-        cg.add(var.set_device_class(device_class))
+    setup_device_class(config)
 
     if mqtt_id := config.get(CONF_MQTT_ID):
         mqtt_ = cg.new_Pvariable(mqtt_id, var)
@@ -103,6 +108,7 @@ async def register_button(var, config):
     if not CORE.has_id(config[CONF_ID]):
         var = cg.Pvariable(config[CONF_ID], var)
     cg.add(cg.App.register_button(var))
+    CORE.register_platform_component("button", var)
     await setup_button_core_(var, config)
 
 
@@ -119,13 +125,14 @@ BUTTON_PRESS_SCHEMA = maybe_simple_id(
 )
 
 
-@automation.register_action("button.press", PressAction, BUTTON_PRESS_SCHEMA)
+@automation.register_action(
+    "button.press", PressAction, BUTTON_PRESS_SCHEMA, synchronous=True
+)
 async def button_press_to_code(config, action_id, template_arg, args):
     paren = await cg.get_variable(config[CONF_ID])
     return cg.new_Pvariable(action_id, template_arg, paren)
 
 
-@coroutine_with_priority(100.0)
+@coroutine_with_priority(CoroPriority.CORE)
 async def to_code(config):
     cg.add_global(button_ns.using)
-    cg.add_define("USE_BUTTON")

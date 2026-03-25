@@ -17,7 +17,7 @@ import esphome.final_validate as fv
 
 _LOGGER = logging.getLogger(__name__)
 
-CODEOWNERS = ["@glmnet"]
+CODEOWNERS = ["@glmnet", "@ximex"]
 CONF_RTTTL = "rtttl"
 CONF_ON_FINISHED_PLAYBACK = "on_finished_playback"
 
@@ -57,14 +57,14 @@ def validate_parent_output_config(value):
     platform = value.get(CONF_PLATFORM)
     PWM_GOOD = ["esp8266_pwm", "ledc"]
     PWM_BAD = [
-        "ac_dimmer ",
+        "ac_dimmer",
         "esp32_dac",
-        "slow_pwm",
         "mcp4725",
-        "pca9685",
-        "tlc59208f",
         "my9231",
+        "pca9685",
+        "slow_pwm",
         "sm16716",
+        "tlc59208f",
     ]
 
     if platform in PWM_BAD:
@@ -117,6 +117,7 @@ async def to_code(config):
         },
         key=CONF_RTTTL,
     ),
+    synchronous=True,
 )
 async def rtttl_play_to_code(config, action_id, template_arg, args):
     paren = await cg.get_variable(config[CONF_ID])
@@ -134,6 +135,7 @@ async def rtttl_play_to_code(config, action_id, template_arg, args):
             cv.GenerateID(): cv.use_id(Rtttl),
         }
     ),
+    synchronous=True,
 )
 async def rtttl_stop_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)

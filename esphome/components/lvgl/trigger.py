@@ -1,12 +1,17 @@
 from esphome import automation
 import esphome.codegen as cg
-from esphome.const import CONF_ID, CONF_ON_BOOT, CONF_ON_VALUE, CONF_TRIGGER_ID
+from esphome.const import (
+    CONF_ID,
+    CONF_ON_BOOT,
+    CONF_ON_VALUE,
+    CONF_TRIGGER_ID,
+    CONF_X,
+    CONF_Y,
+)
 
 from .defines import (
     CONF_ALIGN,
     CONF_ALIGN_TO,
-    CONF_X,
-    CONF_Y,
     DIRECTIONS,
     LV_EVENT_MAP,
     LV_EVENT_TRIGGERS,
@@ -25,7 +30,7 @@ from .lvcode import (
     lvgl_static,
 )
 from .types import LV_EVENT
-from .widgets import LvScrActType, get_scr_act, widget_map
+from .widgets import LvScrActType, get_screen_active, widget_map
 
 
 async def add_on_boot_triggers(triggers):
@@ -43,7 +48,7 @@ async def generate_triggers():
 
     for w in widget_map.values():
         if isinstance(w.type, LvScrActType):
-            w = get_scr_act(w.var)
+            w = get_screen_active(w.var)
 
         if w.config:
             for event, conf in {
@@ -67,7 +72,7 @@ async def generate_triggers():
                 dir = DIRECTIONS.mapper(dir)
                 w.clear_flag("LV_OBJ_FLAG_SCROLLABLE")
                 selected = literal(
-                    f"lv_indev_get_gesture_dir(lv_indev_get_act()) == {dir}"
+                    f"lv_indev_get_gesture_dir(lv_indev_active()) == {dir}"
                 )
                 await add_trigger(
                     conf, w, literal("LV_EVENT_GESTURE"), is_selected=selected

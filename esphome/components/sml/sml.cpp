@@ -1,6 +1,6 @@
 #include "sml.h"
-#include "esphome/core/log.h"
 #include "esphome/core/helpers.h"
+#include "esphome/core/log.h"
 #include "sml_parser.h"
 
 namespace esphome {
@@ -59,10 +59,6 @@ void Sml::loop() {
       };
     };
   }
-}
-
-void Sml::add_on_data_callback(std::function<void(std::vector<uint8_t>, bool)> &&callback) {
-  this->data_callbacks_.add(std::move(callback));
 }
 
 void Sml::process_sml_file_(const BytesView &sml_data) {

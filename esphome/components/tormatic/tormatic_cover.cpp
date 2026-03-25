@@ -34,8 +34,10 @@ void Tormatic::dump_config() {
   LOG_COVER("", "Tormatic Cover", this);
   this->check_uart_settings(9600, 1, uart::UART_CONFIG_PARITY_NONE, 8);
 
-  ESP_LOGCONFIG(TAG, "  Open Duration: %.1fs", this->open_duration_ / 1e3f);
-  ESP_LOGCONFIG(TAG, "  Close Duration: %.1fs", this->close_duration_ / 1e3f);
+  ESP_LOGCONFIG(TAG,
+                "  Open Duration: %.1fs\n"
+                "  Close Duration: %.1fs",
+                this->open_duration_ / 1e3f, this->close_duration_ / 1e3f);
 
   auto restore = this->restore_state_();
   if (restore.has_value()) {
@@ -64,8 +66,9 @@ void Tormatic::control(const cover::CoverCall &call) {
     return;
   }
 
-  if (call.get_position().has_value()) {
-    auto pos = call.get_position().value();
+  auto pos_val = call.get_position();
+  if (pos_val.has_value()) {
+    auto pos = *pos_val;
     this->control_position_(pos);
     return;
   }
@@ -179,6 +182,9 @@ void Tormatic::recompute_position_() {
     direction = -1.0f;
     duration = this->close_duration_;
   }
+
+  if (duration == 0)
+    return;
 
   auto delta = direction * diff / duration;
 
