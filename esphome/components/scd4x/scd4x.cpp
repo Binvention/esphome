@@ -27,7 +27,6 @@ static const uint16_t SCD4X_CMD_GET_FEATURESET = 0x202f;
 static const float SCD4X_TEMPERATURE_OFFSET_MULTIPLIER = (1 << 16) / 175.0f;
 
 void SCD4XComponent::setup() {
-  ESP_LOGCONFIG(TAG, "Running setup");
   // the sensor needs 1000 ms to enter the idle state
   this->set_timeout(1000, [this]() {
     this->status_clear_error();
@@ -308,7 +307,7 @@ bool SCD4XComponent::start_measurement_() {
       break;
   }
 
-  static uint8_t remaining_retries = 3;
+  uint8_t remaining_retries = 3;
   while (remaining_retries) {
     if (!this->write_command(measurement_command)) {
       ESP_LOGE(TAG, "Error starting measurements");
@@ -317,6 +316,7 @@ bool SCD4XComponent::start_measurement_() {
       if (--remaining_retries == 0)
         return false;
       delay(50);  // NOLINT wait 50 ms and try again
+      continue;
     }
     this->status_clear_warning();
     return true;

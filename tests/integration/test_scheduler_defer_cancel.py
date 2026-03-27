@@ -70,16 +70,18 @@ async def test_scheduler_defer_cancel(
                 test_complete_future.set_result(True)
                 return
 
-            if state.key == test_result_entity.key and not test_result_future.done():
-                # Event type should be "defer_executed_X" where X is the defer number
-                if state.event_type.startswith("defer_executed_"):
-                    defer_num = int(state.event_type.split("_")[-1])
-                    test_result_future.set_result(defer_num)
+            if (
+                state.key == test_result_entity.key
+                and not test_result_future.done()
+                and state.event_type.startswith("defer_executed_")
+            ):
+                defer_num = int(state.event_type.split("_")[-1])
+                test_result_future.set_result(defer_num)
 
         client.subscribe_states(on_state)
 
         # Execute the test
-        client.execute_service(test_defer_cancel_service, {})
+        await client.execute_service(test_defer_cancel_service, {})
 
         # Wait for test completion
         try:
