@@ -243,6 +243,19 @@ void Logger::dump_config() {
 #endif
 #ifdef USE_ZEPHYR
   dump_crash_();
+  if (!device_is_ready(this->uart_dev_)) {
+    ESP_LOGE(TAG, "  %s is not ready.", LOG_STR_ARG(get_uart_selection_()));
+  }
+#endif
+  // Warn users that VERBOSE/VERY_VERBOSE logging impacts performance.
+  // Only the compiled log level matters — all log calls up to this level
+  // are in the binary and will be formatted (vsnprintf) and block UART.
+#if ESPHOME_LOG_LEVEL >= ESPHOME_LOG_LEVEL_VERY_VERBOSE
+  ESP_LOGW(TAG, "VERY_VERBOSE logging is active — significant performance impact, short-term debugging only\n"
+                "  May cause connection instability. Set log level to DEBUG or lower for long-term use.");
+#elif ESPHOME_LOG_LEVEL >= ESPHOME_LOG_LEVEL_VERBOSE
+  ESP_LOGI(TAG, "VERBOSE logging is active — performance impact, short-term debugging only\n"
+                "  Set log level to DEBUG or lower for long-term use.");
 #endif
 }
 
