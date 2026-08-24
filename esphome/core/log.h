@@ -54,8 +54,8 @@ namespace esphome {
 #define ESPHOME_LOG_COLOR_CYAN "36"     // DEBUG
 #define ESPHOME_LOG_COLOR_GRAY "37"     // VERBOSE
 #define ESPHOME_LOG_COLOR_WHITE "38"
-#define ESPHOME_LOG_SECRET_BEGIN "\033[5m"
-#define ESPHOME_LOG_SECRET_END "\033[6m"
+#define ESPHOME_LOG_SECRET_BEGIN "\033[8m"
+#define ESPHOME_LOG_SECRET_END "\033[28m"
 #define LOG_SECRET(x) ESPHOME_LOG_SECRET_BEGIN x ESPHOME_LOG_SECRET_END
 
 #define ESPHOME_LOG_COLOR(COLOR) "\033[0;" COLOR "m"
@@ -68,11 +68,6 @@ void esp_log_printf_(int level, const char *tag, int line, const char *format, .
 void esp_log_printf_(int level, const char *tag, int line, const __FlashStringHelper *format, ...);
 #endif
 void esp_log_vprintf_(int level, const char *tag, int line, const char *format, va_list args);  // NOLINT
-#ifdef USE_STORE_LOG_STR_IN_FLASH
-// Remove before 2026.9.0
-__attribute__((deprecated("Use esp_log_printf_() instead. Removed in 2026.9.0."))) void esp_log_vprintf_(
-    int level, const char *tag, int line, const __FlashStringHelper *format, va_list args);
-#endif
 #if defined(USE_ESP32)
 int esp_idf_log_vprintf_(const char *format, va_list args);  // NOLINT
 #endif

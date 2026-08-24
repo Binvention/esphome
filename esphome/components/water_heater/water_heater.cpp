@@ -1,5 +1,7 @@
 #include "water_heater.h"
 #include "esphome/core/log.h"
+
+#include <cinttypes>
 #include "esphome/core/application.h"
 #include "esphome/core/controller_registry.h"
 #include "esphome/core/progmem.h"
@@ -110,7 +112,8 @@ void WaterHeaterCall::validate_() {
   auto traits = this->parent_->get_traits();
   if (this->mode_.has_value()) {
     if (!traits.supports_mode(*this->mode_)) {
-      ESP_LOGW(TAG, "'%s' - Mode %d not supported", this->parent_->get_name().c_str(), *this->mode_);
+      ESP_LOGW(TAG, "'%s' - Mode %" PRIu32 " not supported", this->parent_->get_name().c_str(),
+               static_cast<uint32_t>(*this->mode_));
       this->mode_.reset();
     }
   }
@@ -229,18 +232,6 @@ WaterHeaterTraits WaterHeater::get_traits() {
 #endif
   return traits;
 }
-
-#ifdef USE_WATER_HEATER_VISUAL_OVERRIDES
-void WaterHeater::set_visual_min_temperature_override(float min_temperature_override) {
-  this->visual_min_temperature_override_ = min_temperature_override;
-}
-void WaterHeater::set_visual_max_temperature_override(float max_temperature_override) {
-  this->visual_max_temperature_override_ = max_temperature_override;
-}
-void WaterHeater::set_visual_target_temperature_step_override(float visual_target_temperature_step_override) {
-  this->visual_target_temperature_step_override_ = visual_target_temperature_step_override;
-}
-#endif
 
 // Water heater mode strings indexed by WaterHeaterMode enum (0-6): OFF, ECO, ELECTRIC, PERFORMANCE, HIGH_DEMAND,
 // HEAT_PUMP, GAS
