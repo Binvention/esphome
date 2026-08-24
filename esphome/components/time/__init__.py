@@ -1,11 +1,8 @@
 import errno
+import functools
 from importlib import resources
 import logging
 
-from aioesphomeapi.posix_tz import (
-    DSTRuleType as PyDSTRuleType,
-    parse_posix_tz as parse_posix_tz_python,
-)
 import tzlocal
 
 from esphome import automation
@@ -39,6 +36,7 @@ from esphome.const import (
     PLATFORM_RTL87XX,
 )
 from esphome.core import CORE, CoroPriority, EsphomeError, coroutine_with_priority
+from esphome.helpers import cpp_string_escape
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,13 +55,20 @@ DSTRuleType_cpp = time_ns.enum("DSTRuleType", is_class=True)
 DSTRule_cpp = time_ns.struct("DSTRule")
 ParsedTimezone_cpp = time_ns.struct("ParsedTimezone")
 
-# Map Python DSTRuleType enum values to C++ enum expressions
-_DST_RULE_TYPE_MAP = {
-    PyDSTRuleType.NONE: DSTRuleType_cpp.NONE,
-    PyDSTRuleType.MONTH_WEEK_DAY: DSTRuleType_cpp.MONTH_WEEK_DAY,
-    PyDSTRuleType.JULIAN_NO_LEAP: DSTRuleType_cpp.JULIAN_NO_LEAP,
-    PyDSTRuleType.DAY_OF_YEAR: DSTRuleType_cpp.DAY_OF_YEAR,
-}
+
+# Map Python DSTRuleType enum values to C++ enum expressions. Built lazily to
+# avoid importing aioesphomeapi (a heavy import) when the time component is only
+# auto-loaded for its schema and never reaches code generation.
+@functools.cache
+def _dst_rule_type_map() -> dict:
+    from aioesphomeapi.posix_tz import DSTRuleType as PyDSTRuleType
+
+    return {
+        PyDSTRuleType.NONE: DSTRuleType_cpp.NONE,
+        PyDSTRuleType.MONTH_WEEK_DAY: DSTRuleType_cpp.MONTH_WEEK_DAY,
+        PyDSTRuleType.JULIAN_NO_LEAP: DSTRuleType_cpp.JULIAN_NO_LEAP,
+        PyDSTRuleType.DAY_OF_YEAR: DSTRuleType_cpp.DAY_OF_YEAR,
+    }
 
 
 def _load_tzdata(iana_key: str) -> bytes | None:
@@ -317,6 +322,8 @@ def validate_tz(value: str) -> str:
 
     # Validate that the POSIX TZ string is parseable (skip empty strings)
     if value:
+        from aioesphomeapi.posix_tz import parse_posix_tz as parse_posix_tz_python
+
         try:
             parse_posix_tz_python(value)
         except ValueError as e:
@@ -372,7 +379,7 @@ def _emit_dst_rule_fields(prefix, rule):
     """Emit field-by-field assignments for a DSTRule to avoid rodata struct blob."""
     cg.add(cg.RawExpression(f"{prefix}.time_seconds = {rule.time_seconds}"))
     cg.add(cg.RawExpression(f"{prefix}.day = {rule.day}"))
-    cg.add(cg.RawExpression(f"{prefix}.type = {_DST_RULE_TYPE_MAP[rule.type]}"))
+    cg.add(cg.RawExpression(f"{prefix}.type = {_dst_rule_type_map()[rule.type]}"))
     cg.add(cg.RawExpression(f"{prefix}.month = {rule.month}"))
     cg.add(cg.RawExpression(f"{prefix}.week = {rule.week}"))
     cg.add(cg.RawExpression(f"{prefix}.day_of_week = {rule.day_of_week}"))
@@ -405,15 +412,18 @@ async def setup_time_core_(time_var, config):
         cg.add_define("USE_TIME_TIMEZONE")
 
         if CORE.is_host:
-            # Host platform needs setenv("TZ")/tzset() for libc compatibility
-            cg.add(time_var.set_timezone(timezone))
-        else:
-            # Embedded: pre-parse at codegen time, emit struct directly
-            try:
-                parsed = parse_posix_tz_python(timezone)
-                _emit_parsed_timezone_fields(parsed)
-            except ValueError as e:
-                raise EsphomeError(f"Invalid timezone: {timezone}") from e
+            # Host platform also needs setenv("TZ")/tzset() for libc compatibility
+            cg.add(cg.RawExpression(f'setenv("TZ", {cpp_string_escape(timezone)}, 1)'))
+            cg.add(cg.RawExpression("tzset()"))
+
+        # Pre-parse at codegen time, emit struct directly
+        from aioesphomeapi.posix_tz import parse_posix_tz as parse_posix_tz_python
+
+        try:
+            parsed = parse_posix_tz_python(timezone)
+        except ValueError as e:
+            raise EsphomeError(f"Invalid timezone: {timezone}") from e
+        _emit_parsed_timezone_fields(parsed)
 
     for conf in config.get(CONF_ON_TIME, []):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID], time_var)
