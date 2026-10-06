@@ -314,9 +314,12 @@ void TRF7962A::process_uid() {
     for (int i = 0; i < rx_buff_length_; i++) {
       ESP_LOGVV(TAG, "Data %02x", rx_buff_[i]);
     }
-    // retry send inventory
-    set_timeout(50, [this]() { this->ISO15693_send_single_slot_inventory_(); });
-    return;
+    if (this->rx_buff_length_ < 10) {
+      // retry send inventory
+      set_timeout(50, [this]() { this->ISO15693_send_single_slot_inventory_(); });
+      return;
+    }
+    // otherwise assume extra bytes are on the end
   }
   bool update = false;
   if (this->tag_uid_[0]) {
