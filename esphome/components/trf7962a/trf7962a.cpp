@@ -11,6 +11,7 @@ namespace esphome {
 namespace trf7962a {
 
 static const char *const TAG = "trf7962a";
+static constexpr uint32_t INTERVAL_WAIT_RX = 0;
 
 void TRF7962A::setup() {
   this->spi_setup();
@@ -198,8 +199,9 @@ void TRF7962A::ISO15693_unlock_privacy_slix_(const std::array<uint8_t, 4> passwo
 void TRF7962A::ISO15693_read_single_block_(uint8_t blockId, uint8_t *blockData) {}
 
 void TRF7962A::wait_for_rx() {
-  this->set_retry("rx_wait", 10, 20, [this](const uint8_t attempts) {
-    RetryResult result = RetryResult::RETRY;
+  this->wait_attempts_ = 10;
+  this->set_interval(INTERVAL_WAIT_RX, 20, [this]() {
+    bool done = false;
     if (irq_pin_->digital_read()) {
       this->enable();
       this->write_byte((uint8_t) IRQ_STAT | (uint8_t) READ);
@@ -244,7 +246,8 @@ void TRF7962A::wait_for_rx() {
             break;
         }
         this->transfer_status_ = TRANSFER_STATUS::NO_TRANSACTIONS;
-        result = RetryResult::DONE;
+        cancel_interval(INTERVAL_WAIT_RX);
+        done = true;
       } else if (irq & TRF7962A_IRQ_STAT::FIFO_HIGH_OR_LOW) {
         uint8_t length = this->read_register(TRF7962A_REG::FIFO_STAT);
         if (length & 0x10) {
@@ -256,7 +259,7 @@ void TRF7962A::wait_for_rx() {
       }
     }
 
-    if (attempts == 0 && result == RetryResult::RETRY) {
+    if (this->wait_attempts_ == 0 && !done) {
       if (tag_uid_[0]) {
         tag_uid_[0] = 0;
         for (auto *trigger : triggers_ontagremoved_) {
@@ -271,8 +274,9 @@ void TRF7962A::wait_for_rx() {
       this->last_random_[0] = 0;
       this->rx_buff_length_ = 0;
       this->search_tag();
+      cancel_interval(INTERVAL_WAIT_RX);
     }
-    return result;
+    this->wait_attempts_--;
   });
 }
 
@@ -310,7 +314,9 @@ void TRF7962A::process_uid() {
     for (int i = 0; i < rx_buff_length_; i++) {
       ESP_LOGVV(TAG, "Data %02x", rx_buff_[i]);
     }
-    // assume extra bits are on the end
+    // retry send inventory
+    set_timeout(50, [this]() { this->ISO15693_send_single_slot_inventory_(); });
+    return;
   }
   bool update = false;
   if (this->tag_uid_[0]) {
