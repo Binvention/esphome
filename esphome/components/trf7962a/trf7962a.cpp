@@ -314,7 +314,7 @@ void TRF7962A::process_uid() {
     for (int i = 0; i < rx_buff_length_; i++) {
       ESP_LOGVV(TAG, "Data %02x", rx_buff_[i]);
     }
-    if (this->rx_buff_length_ < 10) {
+    if (this->rx_buff_length_ < 8) {
       // retry send inventory
       set_timeout(50, [this]() { this->ISO15693_send_single_slot_inventory_(); });
       return;
