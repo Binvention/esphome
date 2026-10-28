@@ -316,7 +316,7 @@ void TRF7962A::process_uid() {
     }
     if (this->rx_buff_length_ < 8) {
       // retry send inventory
-      set_timeout(50, [this]() { this->ISO15693_send_single_slot_inventory_(); });
+      search_tag();
       return;
     }
     // otherwise assume extra bytes are on the end
